@@ -1,0 +1,228 @@
+<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-[#111827] dark:text-slate-50">
+  <header class="sticky top-0 z-20 border-b border-blue-100 bg-white/88 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/82">
+    <div class="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-6 max-sm:px-4">
+      <a routerLink="/" class="inline-flex items-center gap-3 no-underline" aria-label="AnuCloud">
+        <img src="/assets/AnuCloud-128.png" width="44" height="44" alt="AnuCloud logo" class="h-11 w-11 rounded-lg object-cover" decoding="async" fetchpriority="high" />
+        <span class="bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-2xl font-black tracking-normal text-transparent">
+          AnuCloud
+        </span>
+      </a>
+
+      <nav class="flex items-center gap-2">
+        <a routerLink="/login" class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-700 no-underline hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+          เข้าสู่ระบบ
+        </a>
+        <a routerLink="/register" class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white no-underline shadow-[0_12px_24px_rgba(37,99,235,0.22)] hover:bg-violet-700 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-blue-300">
+          เริ่มใช้ฟรี
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.22),transparent_28%),radial-gradient(circle_at_78%_10%,rgba(124,58,237,0.20),transparent_30%),linear-gradient(180deg,#F8FAFC_0%,#EFF6FF_100%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_78%_10%,rgba(124,58,237,0.18),transparent_30%),linear-gradient(180deg,#0F172A_0%,#111827_100%)]"></div>
+    <div class="mx-auto grid min-h-[calc(100dvh-72px)] max-w-7xl grid-cols-[minmax(0,0.92fr)_minmax(360px,1.08fr)] items-center gap-10 px-6 py-10 max-lg:grid-cols-1 max-sm:px-4">
+      <div class="max-w-2xl">
+        <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-4 py-2 text-sm font-extrabold text-blue-700 shadow-sm dark:border-cyan-300/20 dark:bg-slate-900/70 dark:text-cyan-200">
+          <svg lucideSparkles aria-hidden="true" class="h-4 w-4"></svg>
+          โปรเปิดตัว AnuCloud Pro ลด 30%
+        </div>
+
+        <h1 class="m-0 text-[clamp(2.6rem,6vw,5.8rem)] font-black leading-[0.95] tracking-normal">
+          AnuCloud
+        </h1>
+        <p class="m-0 mt-5 max-w-xl text-xl font-semibold leading-8 text-slate-600 dark:text-slate-300 max-sm:text-lg">
+          พื้นที่จัดเก็บไฟล์ส่วนตัวและไฟล์งานที่ใช้ง่าย ปลอดภัย และพร้อมให้คุณเปิดเอกสาร รูปภาพ และโปรเจกต์สำคัญได้จากทุกที่
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a routerLink="/register" class="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 px-5 text-sm font-black text-white no-underline shadow-[0_16px_34px_rgba(37,99,235,0.28)] hover:shadow-[0_20px_42px_rgba(37,99,235,0.34)]">
+            สมัครใช้งานฟรี
+            <svg lucideChevronRight aria-hidden="true" class="h-5 w-5"></svg>
+          </a>
+          <a routerLink="/login" class="inline-flex min-h-12 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 text-sm font-black text-slate-700 no-underline hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-cyan-300">
+            ไปที่ไดรฟ์ของฉัน
+          </a>
+        </div>
+
+        <div class="mt-8 grid max-w-xl grid-cols-3 gap-4 max-sm:grid-cols-1">
+          <div>
+            <p class="m-0 text-2xl font-black text-blue-600 dark:text-cyan-300">10 GB</p>
+            <p class="m-0 text-sm font-semibold text-slate-500 dark:text-slate-400">เริ่มต้นฟรี</p>
+          </div>
+          <div>
+            <p class="m-0 text-2xl font-black text-blue-600 dark:text-cyan-300">256-bit</p>
+            <p class="m-0 text-sm font-semibold text-slate-500 dark:text-slate-400">ออกแบบเพื่อความปลอดภัย</p>
+          </div>
+          <div>
+            <p class="m-0 text-2xl font-black text-blue-600 dark:text-cyan-300">ทุกที่</p>
+            <p class="m-0 text-sm font-semibold text-slate-500 dark:text-slate-400">พร้อมใช้งานบนเว็บ</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-blue-100 bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.14)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_28px_70px_rgba(0,0,0,0.32)]">
+        <div class="mb-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="grid h-11 w-11 place-items-center rounded-lg bg-blue-100 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300">
+              <svg lucideCloud aria-hidden="true" class="h-6 w-6"></svg>
+            </div>
+            <div>
+              <p class="m-0 text-sm font-black">AnuCloud Drive</p>
+              <p class="m-0 text-xs text-slate-500 dark:text-slate-400">ไฟล์ล่าสุดของคุณ</p>
+            </div>
+          </div>
+          <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-300/10 dark:text-emerald-200">
+            Synced
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+          <div class="rounded-lg border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <svg lucideFolder aria-hidden="true" class="mb-5 h-9 w-9 text-blue-600 dark:text-cyan-300"></svg>
+            <p class="m-0 font-black">เอกสารงาน</p>
+            <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">24 ไฟล์</p>
+          </div>
+          <div class="rounded-lg border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <svg lucideFileImage aria-hidden="true" class="mb-5 h-9 w-9 text-violet-700 dark:text-violet-300"></svg>
+            <p class="m-0 font-black">รูปภาพ</p>
+            <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">128 ไฟล์</p>
+          </div>
+          <div class="rounded-lg border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <svg lucideShare2 aria-hidden="true" class="mb-5 h-9 w-9 text-sky-600 dark:text-sky-300"></svg>
+            <p class="m-0 font-black">แชร์กับทีม</p>
+            <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">9 ไฟล์</p>
+          </div>
+        </div>
+
+        <div class="mt-4 overflow-hidden rounded-lg border border-blue-100 dark:border-slate-800">
+          <div class="grid grid-cols-[1fr_110px_90px] bg-slate-50 px-4 py-3 text-xs font-black uppercase text-slate-400 dark:bg-slate-950 max-sm:grid-cols-[1fr_80px]">
+            <span>ชื่อไฟล์</span>
+            <span class="max-sm:hidden">แก้ไขล่าสุด</span>
+            <span>ขนาด</span>
+          </div>
+          <div class="divide-y divide-blue-50 dark:divide-slate-800">
+            <div class="grid grid-cols-[1fr_110px_90px] items-center px-4 py-3 max-sm:grid-cols-[1fr_80px]">
+              <span class="flex items-center gap-3 font-extrabold">
+                <svg lucideFileText aria-hidden="true" class="h-5 w-5 text-blue-600 dark:text-cyan-300"></svg>
+                Project.pdf
+              </span>
+              <span class="text-sm text-slate-500 dark:text-slate-400 max-sm:hidden">วันนี้</span>
+              <span class="text-sm text-slate-500 dark:text-slate-400">2.4 MB</span>
+            </div>
+            <div class="grid grid-cols-[1fr_110px_90px] items-center px-4 py-3 max-sm:grid-cols-[1fr_80px]">
+              <span class="flex items-center gap-3 font-extrabold">
+                <svg lucideFileArchive aria-hidden="true" class="h-5 w-5 text-violet-700 dark:text-violet-300"></svg>
+                Assets.zip
+              </span>
+              <span class="text-sm text-slate-500 dark:text-slate-400 max-sm:hidden">เมื่อวาน</span>
+              <span class="text-sm text-slate-500 dark:text-slate-400">18 MB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white py-18 dark:bg-slate-950">
+    <div class="mx-auto max-w-7xl px-6 max-sm:px-4">
+      <div class="mb-8 max-w-2xl">
+        <h2 class="m-0 text-3xl font-black tracking-normal">จัดการไฟล์ได้คล่องขึ้น</h2>
+        <p class="m-0 mt-3 text-lg font-medium text-slate-600 dark:text-slate-300">
+          AnuCloud ออกแบบให้เหมือน drive ส่วนตัวที่เปิดแล้วเข้าใจทันที เหมาะกับทั้งงานเรียน งานส่วนตัว และงานทีม
+        </p>
+      </div>
+
+      <div class="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        <article class="rounded-lg border border-blue-100 p-5 dark:border-slate-800">
+          <svg lucideUploadCloud aria-hidden="true" class="mb-5 h-8 w-8 text-blue-600 dark:text-cyan-300"></svg>
+          <h3 class="m-0 text-lg font-black">อัปโหลดรวดเร็ว</h3>
+          <p class="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">เก็บไฟล์สำคัญไว้ในพื้นที่เดียว ลดการส่งไฟล์ซ้ำไปมา</p>
+        </article>
+        <article class="rounded-lg border border-blue-100 p-5 dark:border-slate-800">
+          <svg lucideLockKeyhole aria-hidden="true" class="mb-5 h-8 w-8 text-blue-600 dark:text-cyan-300"></svg>
+          <h3 class="m-0 text-lg font-black">ปลอดภัยขึ้น</h3>
+          <p class="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">แยกไฟล์ตามบัญชีผู้ใช้และออกแบบ API ให้ใช้งานร่วมกับ session อย่างเหมาะสม</p>
+        </article>
+        <article class="rounded-lg border border-blue-100 p-5 dark:border-slate-800">
+          <svg lucideUsers aria-hidden="true" class="mb-5 h-8 w-8 text-blue-600 dark:text-cyan-300"></svg>
+          <h3 class="m-0 text-lg font-black">พร้อมแชร์งาน</h3>
+          <p class="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">เตรียมพื้นที่สำหรับทีม โปรเจกต์ และการทำงานร่วมกันในอนาคต</p>
+        </article>
+        <article class="rounded-lg border border-blue-100 p-5 dark:border-slate-800">
+          <svg lucideHardDrive aria-hidden="true" class="mb-5 h-8 w-8 text-blue-600 dark:text-cyan-300"></svg>
+          <h3 class="m-0 text-lg font-black">เห็นพื้นที่ชัดเจน</h3>
+          <p class="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">ดูไฟล์ล่าสุด ขนาดไฟล์ และพื้นที่ใช้งานได้ใน dashboard เดียว</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#F8FAFC] py-18 dark:bg-[#111827]">
+    <div class="mx-auto max-w-7xl px-6 max-sm:px-4">
+      <div class="mb-8 flex items-end justify-between gap-4 max-md:block">
+        <div>
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-extrabold text-violet-700 dark:border-cyan-300/20 dark:bg-slate-900 dark:text-cyan-200">
+            <svg lucideZap aria-hidden="true" class="h-4 w-4"></svg>
+            Promotion Plan
+          </div>
+          <h2 class="m-0 text-3xl font-black tracking-normal">เลือกแพ็กเกจที่เหมาะกับคุณ</h2>
+          <p class="m-0 mt-3 text-lg font-medium text-slate-600 dark:text-slate-300">
+            เริ่มฟรีก่อน แล้วค่อยอัปเกรดเมื่อพื้นที่ทำงานของคุณโตขึ้น
+          </p>
+        </div>
+        <p class="m-0 text-sm font-bold text-slate-500 dark:text-slate-400 max-md:mt-4">
+          ราคา promotion สำหรับช่วงเปิดตัว
+        </p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-5 max-lg:grid-cols-1">
+        @for (plan of plans; track plan.name) {
+        <article
+          class="relative rounded-lg border bg-white p-6 shadow-sm dark:bg-slate-900"
+          [class.border-blue-100]="!plan.featured"
+          [class.dark:border-slate-800]="!plan.featured"
+          [class.border-blue-500]="plan.featured"
+          [class.shadow-[0_24px_54px_rgba(37,99,235,0.20)]]="plan.featured">
+          @if (plan.featured) {
+          <div class="absolute right-5 top-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white dark:bg-cyan-400 dark:text-slate-950">
+            คุ้มที่สุด
+          </div>
+          }
+
+          <h3 class="m-0 text-xl font-black">{{ plan.name }}</h3>
+          <p class="m-0 mt-3 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ plan.highlight }}</p>
+          <div class="mt-6">
+            <span class="text-4xl font-black">{{ plan.price }}</span>
+            <p class="m-0 mt-2 text-sm font-bold text-blue-600 dark:text-cyan-300">{{ plan.storage }} storage</p>
+          </div>
+
+          <ul class="m-0 mt-6 grid list-none gap-3 p-0">
+            @for (feature of plan.features; track feature) {
+            <li class="flex items-start gap-3 text-sm font-semibold text-slate-600 dark:text-slate-300">
+              <svg lucideBadgeCheck aria-hidden="true" class="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-cyan-300"></svg>
+              {{ feature }}
+            </li>
+            }
+          </ul>
+
+          <a
+            routerLink="/register"
+            class="mt-7 inline-flex min-h-11 w-full items-center justify-center rounded-lg text-sm font-black no-underline"
+            [class.bg-blue-600]="plan.featured"
+            [class.text-white]="plan.featured"
+            [class.hover:bg-violet-700]="plan.featured"
+            [class.border]="!plan.featured"
+            [class.border-blue-200]="!plan.featured"
+            [class.text-slate-700]="!plan.featured"
+            [class.hover:text-blue-700]="!plan.featured"
+            [class.dark:border-slate-700]="!plan.featured"
+            [class.dark:text-slate-100]="!plan.featured">
+            เลือกแพ็กเกจนี้
+          </a>
+        </article>
+        }
+      </div>
+    </div>
+  </section>
+</main>

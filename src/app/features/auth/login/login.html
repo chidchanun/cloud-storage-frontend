@@ -1,0 +1,85 @@
+<main
+  class="grid min-h-dvh place-items-center bg-[radial-gradient(circle_at_18%_20%,rgba(124,58,237,0.20),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(34,211,238,0.22),transparent_28%),linear-gradient(135deg,#F8FAFC_0%,#EEF6FF_47%,#111827_47%,#111827_100%)] p-8 text-slate-950 dark:bg-[radial-gradient(circle_at_18%_20%,rgba(124,58,237,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(34,211,238,0.18),transparent_28%),linear-gradient(135deg,#020617_0%,#111827_52%,#0F172A_100%)] dark:text-slate-50 max-md:bg-[radial-gradient(circle_at_22%_12%,rgba(124,58,237,0.18),transparent_34%),linear-gradient(180deg,#F8FAFC_0%,#EFF6FF_100%)] max-md:p-4 max-md:dark:bg-[radial-gradient(circle_at_22%_12%,rgba(124,58,237,0.20),transparent_34%),linear-gradient(180deg,#020617_0%,#111827_100%)]"
+>
+  <section
+    aria-labelledby="login-title"
+    class="grid min-h-155 w-full max-w-300 overflow-hidden rounded-3xl border border-blue-200/80 bg-slate-50/90 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-cyan-300/20 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.48)] lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] max-md:min-h-0 max-md:grid-cols-1 max-md:rounded-2xl"
+  >
+    <div
+      class="flex flex-col justify-center gap-12 bg-[linear-gradient(145deg,rgba(109,40,217,0.92),rgba(37,99,235,0.88)_50%,rgba(14,165,233,0.86)),#2563EB] p-12 text-slate-50 dark:bg-[linear-gradient(145deg,rgba(109,40,217,0.80),rgba(37,99,235,0.74)_50%,rgba(14,165,233,0.58)),#111827] max-md:gap-8 max-md:p-7"
+    >
+      <a class="inline-flex w-fit items-center gap-3.5 text-inherit no-underline" routerLink="/" aria-label="AnuCloud">
+        <img src="/assets/AnuCloud-128.png" width="72" height="72" alt="AnuCloud logo" class="h-18 w-18 rounded-[18px] object-cover shadow-[0_16px_36px_rgba(17,24,39,0.28)] max-md:h-15 max-md:w-15 max-md:rounded-[14px]" decoding="async" fetchpriority="high" />
+
+        <span class="flex flex-col leading-none">
+          <span class="bg-linear-to-r from-white via-blue-200 to-cyan-300 bg-clip-text text-[clamp(1.8rem,4vw,2.55rem)] font-black tracking-normal text-transparent">
+            AnuCloud
+          </span>
+          <span class="mt-2 text-xs font-bold uppercase tracking-normal text-blue-200">
+            Secure cloud storage
+          </span>
+        </span>
+      </a>
+
+      <div class="max-w-120">
+        <p class="mb-3 text-xs font-extrabold uppercase tracking-normal text-blue-200">Cloud Storage</p>
+        <h2 id="login-title" class="m-0 text-[clamp(1.9rem,3.2vw,3.25rem)] font-black leading-tight tracking-normal">
+          เข้าสู่ระบบจัดการไฟล์ของคุณ
+        </h2>
+        <p class="mt-5 max-w-110 text-base leading-8 text-slate-50/80 dark:text-slate-100/80">
+          เข้าถึงพื้นที่จัดเก็บบนคลาวด์ที่รวดเร็ว ปลอดภัย และพร้อมใช้งานทุกอุปกรณ์
+        </p>
+      </div>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col justify-center gap-5 bg-white/90 p-14 dark:bg-slate-950/92 max-md:p-7">
+      <div>
+        <p class="mb-3 text-xs font-extrabold uppercase tracking-normal text-violet-700 dark:text-cyan-300">
+          Welcome back
+        </p>
+        <h2 class="m-0 text-3xl font-black tracking-normal text-slate-950 dark:text-slate-50">เข้าสู่ระบบ</h2>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="m-0 rounded-lg border border-violet-600/20 bg-violet-600/10 px-3.5 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200" role="alert">
+          {{ errorMessage() }}
+        </p>
+      }
+
+      <div class="grid gap-2">
+        <label for="email" class="text-sm font-bold text-slate-700 dark:text-slate-200">อีเมล</label>
+        <div class="relative">
+          <svg lucideMail aria-hidden="true" class="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500 dark:text-cyan-300"></svg>
+          <input id="email" type="email" formControlName="email" placeholder="example@email.com" autocomplete="email" class="min-h-13 w-full rounded-lg border border-blue-200 bg-slate-50 px-12 font-[inherit] text-slate-950 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-cyan-300 dark:focus:bg-slate-900 dark:focus:shadow-[0_0_0_4px_rgba(34,211,238,0.14)]" />
+        </div>
+      </div>
+
+      <div class="grid gap-2">
+        <label for="password" class="text-sm font-bold text-slate-700 dark:text-slate-200">รหัสผ่าน</label>
+        <div class="relative">
+          <svg lucideLockKeyhole aria-hidden="true" class="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500 dark:text-cyan-300"></svg>
+          <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="กรอกรหัสผ่าน" autocomplete="current-password" class="min-h-13 w-full rounded-lg border border-blue-200 bg-slate-50 px-12 font-[inherit] text-slate-950 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-cyan-300 dark:focus:bg-slate-900 dark:focus:shadow-[0_0_0_4px_rgba(34,211,238,0.14)]" />
+
+          <button type="button" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'" class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg border-0 bg-transparent text-blue-600 hover:bg-blue-100 hover:text-violet-700 dark:text-cyan-300 dark:hover:bg-cyan-300/10 dark:hover:text-blue-200">
+            @if (showPassword()) {
+              <svg lucideEyeOff aria-hidden="true" class="h-5 w-5"></svg>
+            } @else {
+              <svg lucideEye aria-hidden="true" class="h-5 w-5"></svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="loginForm.invalid || loading()" class="min-h-13 rounded-lg border-0 bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 font-[inherit] font-black text-white shadow-[0_14px_28px_rgba(37,99,235,0.28)] hover:shadow-[0_18px_34px_rgba(37,99,235,0.34)] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none dark:shadow-[0_14px_28px_rgba(34,211,238,0.16)] dark:hover:shadow-[0_18px_34px_rgba(34,211,238,0.22)]">
+        {{ loading() ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ' }}
+      </button>
+
+      <p class="m-0 text-center text-sm font-medium text-slate-600 dark:text-slate-300">
+        ยังไม่มีบัญชี?
+        <a routerLink="/register" class="font-extrabold text-blue-600 no-underline hover:text-violet-700 dark:text-cyan-300 dark:hover:text-blue-200">
+          สมัครสมาชิก
+        </a>
+      </p>
+    </form>
+  </section>
+</main>
