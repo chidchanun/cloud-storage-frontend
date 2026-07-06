@@ -21,6 +21,7 @@ interface ApiUser {
     first_name: string;
     last_name: string;
     email: string;
+    email_verified: boolean;
     picture_path: string | null;
     phone: string;
 }
@@ -35,6 +36,7 @@ export interface User {
     firstName: string;
     lastName: string;
     email: string;
+    emailVerified: boolean;
     picturePath: string | null;
     phoneNumber: string;
 }
@@ -111,6 +113,10 @@ export class AuthService {
             );
     }
 
+    getGoogleLoginUrl(): string {
+        return `${this.apiUrl}/google`;
+    }
+
     uploadProfilePicture(file: File): Observable<RegisterResponse> {
         const formData = new FormData();
         formData.append('file', file);
@@ -150,6 +156,21 @@ export class AuthService {
             );
     }
 
+    loadCurrentUserStrict(): Observable<User> {
+        return this.http
+            .get<ApiUser>(
+                `${this.baseApiUrl}/me`,
+                { withCredentials: true },
+            )
+            .pipe(
+                map((user) => this.normalizeUser(user)),
+                tap((user) => {
+                    this.currentUser.set(user);
+                    this.authChecked.set(true);
+                }),
+            );
+    }
+
     logout(): Observable<void> {
         return this.http
             .post<void>(
@@ -182,6 +203,7 @@ export class AuthService {
             firstName: user.first_name,
             lastName: user.last_name,
             email: user.email,
+            emailVerified: user.email_verified,
             picturePath: user.picture_path,
             phoneNumber: user.phone,
         };

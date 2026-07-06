@@ -29,16 +29,30 @@ export const authGuard: CanActivateFn = () => {
     }
 
     if (authService.authChecked()) {
-        return authService.isAuthenticated()
+        const user = authService.currentUser();
+
+        if (!user) {
+            return router.createUrlTree(['/login']);
+        }
+
+        return user.emailVerified
             ? true
-            : router.createUrlTree(['/login']);
+            : router.createUrlTree(['/login'], {
+                queryParams: { error: 'email_not_verified' },
+            });
     }
 
     return authService.loadCurrentUser().pipe(
         map((user) => {
-            return user
+            if (!user) {
+                return router.createUrlTree(['/login']);
+            }
+
+            return user.emailVerified
                 ? true
-                : router.createUrlTree(['/login']);
+                : router.createUrlTree(['/login'], {
+                    queryParams: { error: 'email_not_verified' },
+                });
         }),
         catchError(() => {
             return of(router.createUrlTree(['/login']));

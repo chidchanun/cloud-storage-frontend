@@ -1,26 +1,43 @@
 <main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
   <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
-    <app-sidebar uploadTargetId="myDriveFileUpload" [uploadText]="uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'" [uploadBusy]="uploading()" />
+    <app-sidebar
+      uploadTargetId="myDriveFileUpload"
+      [uploadText]="uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'"
+      [uploadBusy]="uploading()"
+    />
 
     <section class="min-w-0">
       <div class="grid gap-6 px-6 py-6 max-sm:px-4">
         <header class="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div class="mb-2 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <div
+              class="mb-2 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400"
+            >
               AnuCloud
               <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
-              <button type="button" (click)="openRootFolder()" class="cursor-pointer font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">
+              <button
+                type="button"
+                (click)="openRootFolder()"
+                class="cursor-pointer font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+              >
                 ไฟล์ของฉัน
               </button>
               @for (folder of folderPath(); track folder.id; let index = $index) {
-              <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
-              <button type="button" (click)="openFolderPath(index)" class="cursor-pointer max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300" [title]="folder.name">
-                {{ folder.name }}
-              </button>
+                <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
+                <button
+                  type="button"
+                  (click)="openFolderPath(index)"
+                  class="cursor-pointer max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+                  [title]="folder.name"
+                >
+                  {{ folder.name }}
+                </button>
               }
             </div>
             <h1 class="m-0 flex items-center gap-3 text-3xl font-black tracking-normal">
-              <span class="grid h-11 w-11 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300">
+              <span
+                class="grid h-11 w-11 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+              >
                 <svg lucideFolder aria-hidden="true" class="h-6 w-6"></svg>
               </span>
               ไฟล์ของฉัน
@@ -31,73 +48,205 @@
             <button
               type="button"
               (click)="toggleNewMenu($event)"
-              class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.18)] hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
+              class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.18)] hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+            >
               <svg lucidePlus aria-hidden="true" class="h-5 w-5"></svg>
               ใหม่
             </button>
 
             @if (newMenuOpen()) {
-            <div
-              class="fixed z-50 w-56 overflow-hidden rounded-xl border border-blue-100 bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900"
-              [style.top.px]="newMenuPosition().top"
-              [style.left.px]="newMenuPosition().left">
-              <button type="button" (click)="openCreateFolderDialog()" class="flex min-h-11 w-full items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                <svg lucideFolderPlus aria-hidden="true" class="h-5 w-5"></svg>
-                สร้างโฟลเดอร์
-              </button>
-              <label for="myDriveFileUpload" class="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                <svg lucideUpload aria-hidden="true" class="h-5 w-5"></svg>
-                อัปโหลดไฟล์
-              </label>
-              <label for="myDriveFolderUpload" class="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
-                อัปโหลดโฟลเดอร์
-              </label>
-            </div>
+              <div
+                class="fixed z-50 w-56 overflow-hidden rounded-xl border border-blue-100 bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900"
+                [style.top.px]="newMenuPosition().top"
+                [style.left.px]="newMenuPosition().left"
+              >
+                <button
+                  type="button"
+                  (click)="openCreateFolderDialog()"
+                  class="flex min-h-11 w-full items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                >
+                  <svg lucideFolderPlus aria-hidden="true" class="h-5 w-5"></svg>
+                  สร้างโฟลเดอร์
+                </button>
+                <label
+                  for="myDriveFileUpload"
+                  class="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                >
+                  <svg lucideUpload aria-hidden="true" class="h-5 w-5"></svg>
+                  อัปโหลดไฟล์
+                </label>
+                <label
+                  for="myDriveFolderUpload"
+                  class="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 text-left text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                >
+                  <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
+                  อัปโหลดโฟลเดอร์
+                </label>
+              </div>
             }
 
             <label
               for="myDriveFileUpload"
-              class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300">
-              <svg lucideUpload aria-hidden="true" class="h-5 w-5" [class.animate-bounce]="uploading()"></svg>
+              class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300"
+            >
+              <svg
+                lucideUpload
+                aria-hidden="true"
+                class="h-5 w-5"
+                [class.animate-bounce]="uploading()"
+              ></svg>
               {{ uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลด' }}
             </label>
-            <input id="myDriveFileUpload" type="file" class="sr-only" [disabled]="uploading()" (change)="uploadFile($event)" />
-            <input id="myDriveFolderUpload" type="file" class="sr-only" [disabled]="uploading()" multiple [attr.webkitdirectory]="true" (change)="uploadFolder($event)" />
+            <input
+              id="myDriveFileUpload"
+              type="file"
+              class="sr-only"
+              [disabled]="uploading()"
+              (change)="uploadFile($event)"
+            />
+            <input
+              id="myDriveFolderUpload"
+              type="file"
+              class="sr-only"
+              [disabled]="uploading()"
+              multiple
+              [attr.webkitdirectory]="true"
+              (change)="uploadFolder($event)"
+            />
 
             <button
               type="button"
               (click)="loadFiles()"
               [disabled]="loading()"
-              class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-              <svg lucideRefreshCw aria-hidden="true" class="h-5 w-5" [class.animate-spin]="loading()"></svg>
+              class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+            >
+              <svg
+                lucideRefreshCw
+                aria-hidden="true"
+                class="h-5 w-5"
+                [class.animate-spin]="loading()"
+              ></svg>
               รีเฟรช
             </button>
           </div>
         </header>
 
         @if (uploadMessage()) {
-        <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ uploadMessage() }}</p>
+          <p
+            class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200"
+          >
+            {{ uploadMessage() }}
+          </p>
         }
         @if (uploadError()) {
-        <p class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ uploadError() }}</p>
+          <p
+            class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200"
+          >
+            {{ uploadError() }}
+          </p>
+        }
+        @if (uploading()) {
+          <div
+            class="rounded-xl border border-blue-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div
+              class="mb-2 flex items-center justify-between gap-3 text-sm font-extrabold text-slate-600 dark:text-slate-300"
+            >
+              <span class="truncate">{{ uploadProgressLabel() || 'กำลังอัปโหลดไฟล์' }}</span>
+              <span>{{ uploadProgress() }}%</span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-blue-50 dark:bg-slate-800">
+              <div
+                class="h-full rounded-full bg-blue-600 transition-[width] duration-200 dark:bg-cyan-300"
+                [style.width.%]="uploadProgress()"
+              ></div>
+            </div>
+          </div>
         }
         @if (actionMessage()) {
-        <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ actionMessage() }}</p>
+          <p
+            class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200"
+          >
+            {{ actionMessage() }}
+          </p>
         }
         @if (actionError()) {
-        <p class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ actionError() }}</p>
+          <p
+            class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200"
+          >
+            {{ actionError() }}
+          </p>
         }
         @if (moveMessage()) {
-        <p class="m-0 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ moveMessage() }}</p>
+          <p
+            class="m-0 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200"
+          >
+            {{ moveMessage() }}
+          </p>
         }
 
-        <section class="overflow-visible rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 px-5 py-4 dark:border-slate-800">
+        <section
+          class="overflow-visible rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900"
+        >
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 px-5 py-4 dark:border-slate-800"
+          >
             <h2 class="m-0 text-lg font-black">รายการไฟล์ทั้งหมด</h2>
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-bold text-slate-500 dark:text-slate-400">{{ folders().length }} โฟลเดอร์ · {{ files().length }} ไฟล์</span>
-              <div class="flex rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-sm font-bold text-slate-500 dark:text-slate-400"
+                >{{ folders().length }} โฟลเดอร์ · {{ files().length }} ไฟล์</span
+              >
+              <div
+                class="flex flex-wrap items-center gap-1 rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <button
+                  type="button"
+                  (click)="sortBy('name')"
+                  [class.bg-blue-50]="sortField() === 'name'"
+                  [class.text-blue-700]="sortField() === 'name'"
+                  [class.dark:bg-cyan-300/10]="sortField() === 'name'"
+                  [class.dark:text-cyan-300]="sortField() === 'name'"
+                  class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+                >
+                  ชื่อ {{ sortIndicator('name') }}
+                </button>
+                <button
+                  type="button"
+                  (click)="sortBy('type')"
+                  [class.bg-blue-50]="sortField() === 'type'"
+                  [class.text-blue-700]="sortField() === 'type'"
+                  [class.dark:bg-cyan-300/10]="sortField() === 'type'"
+                  [class.dark:text-cyan-300]="sortField() === 'type'"
+                  class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+                >
+                  ประเภท {{ sortIndicator('type') }}
+                </button>
+                <button
+                  type="button"
+                  (click)="sortBy('updated')"
+                  [class.bg-blue-50]="sortField() === 'updated'"
+                  [class.text-blue-700]="sortField() === 'updated'"
+                  [class.dark:bg-cyan-300/10]="sortField() === 'updated'"
+                  [class.dark:text-cyan-300]="sortField() === 'updated'"
+                  class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+                >
+                  อัปเดต {{ sortIndicator('updated') }}
+                </button>
+                <button
+                  type="button"
+                  (click)="sortBy('size')"
+                  [class.bg-blue-50]="sortField() === 'size'"
+                  [class.text-blue-700]="sortField() === 'size'"
+                  [class.dark:bg-cyan-300/10]="sortField() === 'size'"
+                  [class.dark:text-cyan-300]="sortField() === 'size'"
+                  class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+                >
+                  ขนาด {{ sortIndicator('size') }}
+                </button>
+              </div>
+              <div
+                class="flex rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950"
+              >
                 <button
                   type="button"
                   (click)="setViewMode('grid')"
@@ -106,7 +255,8 @@
                   [class.dark:bg-cyan-300/10]="viewMode() === 'grid'"
                   [class.dark:text-cyan-300]="viewMode() === 'grid'"
                   class="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
-                  aria-label="Grid view">
+                  aria-label="Grid view"
+                >
                   <svg lucideGrid3X3 aria-hidden="true" class="h-4 w-4"></svg>
                 </button>
                 <button
@@ -117,615 +267,1517 @@
                   [class.dark:bg-cyan-300/10]="viewMode() === 'list'"
                   [class.dark:text-cyan-300]="viewMode() === 'list'"
                   class="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
-                  aria-label="List view">
+                  aria-label="List view"
+                >
                   <svg lucideList aria-hidden="true" class="h-4 w-4"></svg>
                 </button>
               </div>
             </div>
           </div>
 
-          @if (!loading() && !loadError() && (folders().length > 0 || files().length > 0) && viewMode() === 'grid') {
-          <div class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
-            @for (folder of folders(); track folder.id) {
-            <article
-              role="button"
-              tabindex="0"
-              (click)="openFolder(folder)"
-              (keydown.enter)="openFolder(folder)"
-              (keydown.space)="openFolder(folder)"
-              class="group cursor-pointer rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900 dark:focus:ring-cyan-300/10">
-              <div class="relative grid aspect-[4/3] place-items-center overflow-hidden border-b border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-                <div class="grid h-18 w-18 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-                  <svg lucideFolder aria-hidden="true" class="h-10 w-10"></svg>
-                </div>
-
+          @if (selectedFileCount() > 0) {
+            <div
+              class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 bg-blue-50/70 px-5 py-3 dark:border-slate-800 dark:bg-cyan-300/10"
+            >
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="text-sm font-extrabold text-blue-700 dark:text-cyan-200"
+                  >เลือก {{ selectedFileCount() }} ไฟล์</span
+                >
                 <button
                   type="button"
-                  (click)="toggleFolderActionMenu(folder.id, $event)"
-                  [disabled]="renamingFolderId() !== null"
-                  [class.opacity-100]="openActionFolderId() === folder.id"
-                  class="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-white/90 text-slate-500 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white hover:text-slate-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
-                  aria-label="เมนูโฟลเดอร์">
-                  <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
+                  (click)="clearFileSelection()"
+                  [disabled]="bulkDeleting()"
+                  class="inline-flex min-h-9 items-center rounded-lg px-3 text-sm font-extrabold text-slate-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-900"
+                >
+                  ยกเลิกการเลือก
                 </button>
               </div>
+              <button
+                type="button"
+                (click)="openBulkDeleteDialog()"
+                [disabled]="bulkDeleting()"
+                class="inline-flex min-h-9 items-center gap-2 rounded-lg bg-rose-600 px-3 text-sm font-extrabold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <svg
+                  lucideTrash2
+                  aria-hidden="true"
+                  class="h-4 w-4"
+                  [class.animate-pulse]="bulkDeleting()"
+                ></svg>
+                ลบไฟล์ที่เลือก
+              </button>
+            </div>
+          }
 
-              <div class="grid gap-2 p-4">
-                <h3 class="m-0 truncate text-sm font-black" [title]="folder.name">{{ folder.name }}</h3>
-                <div class="grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
-                  <span>โฟลเดอร์</span>
-                  <span>{{ folder.updatedAt }}</span>
-                </div>
-              </div>
-
-              @if (openActionFolderId() === folder.id) {
-              <div
-                class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
-                [style.top.px]="actionMenuPosition().top"
-                [style.left.px]="actionMenuPosition().left">
-                <button type="button" (click)="$event.stopPropagation(); openRenameFolderDialog(folder)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                  <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
-                  เปลี่ยนชื่อ
-                </button>
-                <button type="button" (click)="$event.stopPropagation(); moveFolder(folder)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                  <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
-                  ย้ายตำแหน่ง
-                </button>
-              </div>
-              }
-            </article>
-            }
-
-            @for (file of files(); track file.id) {
-            <article class="group rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900">
-              <div class="relative grid aspect-[4/3] place-items-center overflow-hidden border-b border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-                @if (file.previewUrl) {
-                <img [src]="file.previewUrl" [alt]="file.name" class="h-full w-full object-contain p-5" loading="lazy" decoding="async" />
-                } @else if (fileIconAsset(file); as iconSrc) {
-                <img [src]="iconSrc" [alt]="file.name + ' icon'" class="h-18 w-18 object-contain drop-shadow-sm" loading="lazy" decoding="async" />
-                } @else {
-                <div class="grid h-18 w-18 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-                  @switch (fileIcon(file.type)) {
-                  @case ('image') {
-                  <svg lucideFileImage aria-hidden="true" class="h-9 w-9"></svg>
-                  }
-                  @case ('text') {
-                  <svg lucideFileText aria-hidden="true" class="h-9 w-9"></svg>
-                  }
-                  @default {
-                  <svg lucideFile aria-hidden="true" class="h-9 w-9"></svg>
-                  }
-                  }
-                </div>
-                }
-
-                <button
-                  type="button"
-                  (click)="toggleActionMenu(file.id, $event)"
-                  [disabled]="downloadingFileId() !== null || deletingFileId() !== null"
-                  [class.opacity-100]="openActionFileId() === file.id"
-                  class="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-white/90 text-slate-500 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white hover:text-slate-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
-                  aria-label="เมนูไฟล์">
-                  <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
-                </button>
-              </div>
-
-              <div class="grid gap-4 p-4">
-                <div>
-                  <h3 class="m-0 truncate text-sm font-black" [title]="file.name">{{ file.name }}</h3>
-                  <div class="mt-3 grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
-                    <span>{{ file.size }}</span>
-                    <span>{{ file.updatedAt }}</span>
-                  </div>
-                </div>
-
-                @if (openActionFileId() === file.id) {
-                <div
-                  class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
-                  [style.top.px]="actionMenuPosition().top"
-                  [style.left.px]="actionMenuPosition().left">
-                  <button type="button" (click)="downloadFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                    <svg lucideDownload aria-hidden="true" class="h-4 w-4" [class.animate-bounce]="downloadingFileId() === file.id"></svg>
-                    ดาวน์โหลด
-                  </button>
-                  <button type="button" (click)="openRenameDialog(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                    <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
-                    เปลี่ยนชื่อ
-                  </button>
-                  <button type="button" (click)="moveFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                    <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
-                    ย้ายตำแหน่ง
-                  </button>
-                  <button type="button" (click)="deleteFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10">
-                    <svg lucideTrash2 aria-hidden="true" class="h-4 w-4" [class.animate-pulse]="deletingFileId() === file.id"></svg>
-                    ลบ
-                  </button>
-                </div>
-                }
-              </div>
-            </article>
-            }
-          </div>
-          } @else {
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-170 border-collapse text-left">
-              <thead class="text-xs font-extrabold uppercase text-slate-400">
-                <tr>
-                  <th class="px-5 py-3">ชื่อ</th>
-                  <th class="px-5 py-3">ประเภท</th>
-                  <th class="px-5 py-3">แก้ไขล่าสุด</th>
-                  <th class="px-5 py-3">ขนาด</th>
-                  <th class="px-5 py-3"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-blue-50 dark:divide-slate-800">
-                @if (loading()) {
-                <tr>
-                  <td colspan="5" class="px-5 py-6">
-                    <div class="grid gap-4">
-                      @for (row of [1, 2, 3, 4]; track row) {
-                      <div class="grid animate-pulse grid-cols-[minmax(220px,1fr)_120px_160px_90px_120px] items-center gap-5">
-                        <div class="flex items-center gap-3">
-                          <div class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
-                          <div class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                        </div>
-                        <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
-                        <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
-                        <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
-                        <div class="h-9 rounded-lg bg-slate-100 dark:bg-slate-800"></div>
-                      </div>
-                      }
-                    </div>
-                  </td>
-                </tr>
-                } @else if (loadError()) {
-                <tr>
-                  <td colspan="5" class="px-5 py-10 text-center">
-                    <p class="m-0 text-sm font-bold text-violet-700 dark:text-cyan-200">{{ loadError() }}</p>
-                    <button type="button" (click)="loadFiles()" class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950">
-                      <svg lucideRefreshCw aria-hidden="true" class="h-4 w-4"></svg>
-                      ลองใหม่
-                    </button>
-                  </td>
-                </tr>
-                } @else if (folders().length === 0 && files().length === 0) {
-                <tr>
-                  <td colspan="5" class="px-5 py-12 text-center text-sm font-bold text-slate-500 dark:text-slate-400">ยังไม่มีไฟล์ในไดรฟ์ของคุณ</td>
-                </tr>
-                } @else {
-                @for (folder of folders(); track folder.id) {
-                <tr
+          @if (
+            !loading() &&
+            !loadError() &&
+            (folders().length > 0 || files().length > 0) &&
+            viewMode() === 'grid'
+          ) {
+            <div
+              class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1"
+            >
+              @for (folder of sortedFolders(); track folder.id) {
+                <article
                   role="button"
                   tabindex="0"
                   (click)="openFolder(folder)"
                   (keydown.enter)="openFolder(folder)"
                   (keydown.space)="openFolder(folder)"
-                  class="cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-inset focus:ring-blue-100 dark:hover:bg-slate-800/60 dark:focus:ring-cyan-300/10">
-                  <td class="px-5 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-                        <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
-                      </div>
-                      <span class="font-extrabold">{{ folder.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">โฟลเดอร์</td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{{ folder.updatedAt }}</td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">-</td>
-                  <td class="px-5 py-4">
-                    <div class="flex justify-end">
-                      <button
-                        type="button"
-                        (click)="toggleFolderActionMenu(folder.id, $event)"
-                        [disabled]="renamingFolderId() !== null"
-                        class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                        aria-label="เมนูโฟลเดอร์">
-                        <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
-                      </button>
+                  class="group cursor-pointer rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900 dark:focus:ring-cyan-300/10"
+                >
+                  <div
+                    class="relative grid aspect-4/3 place-items-center overflow-hidden border-b border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div
+                      class="grid h-18 w-18 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                    >
+                      <svg lucideFolder aria-hidden="true" class="h-10 w-10"></svg>
                     </div>
 
-                    @if (openActionFolderId() === folder.id) {
+                    <button
+                      type="button"
+                      (click)="toggleFolderActionMenu(folder.id, $event)"
+                      [disabled]="renamingFolderId() !== null"
+                      [class.opacity-100]="openActionFolderId() === folder.id"
+                      class="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-white/90 text-slate-500 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white hover:text-slate-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                      aria-label="เมนูโฟลเดอร์"
+                    >
+                      <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
+                    </button>
+                  </div>
+
+                  <div class="grid gap-2 p-4">
+                    <h3 class="m-0 truncate text-sm font-black" [title]="folder.name">
+                      {{ folder.name }}
+                    </h3>
+                    <div class="grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <span>โฟลเดอร์</span>
+                      <span>{{ folder.updatedAt }}</span>
+                    </div>
+                  </div>
+
+                  @if (openActionFolderId() === folder.id) {
                     <div
                       class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
                       [style.top.px]="actionMenuPosition().top"
-                      [style.left.px]="actionMenuPosition().left">
-                      <button type="button" (click)="$event.stopPropagation(); openRenameFolderDialog(folder)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                        <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
-                        เปลี่ยนชื่อ
-                      </button>
-                      <button type="button" (click)="$event.stopPropagation(); moveFolder(folder)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                        <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
-                        ย้ายตำแหน่ง
-                      </button>
-                    </div>
-                    }
-                  </td>
-                </tr>
-                }
-
-                @for (file of files(); track file.id) {
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                  <td class="px-5 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-                        @if (fileIconAsset(file); as iconSrc) {
-                        <img [src]="iconSrc" [alt]="file.name + ' icon'" class="h-7 w-7 object-contain" loading="lazy" decoding="async" />
-                        } @else {
-                        @switch (fileIcon(file.type)) {
-                        @case ('image') {
-                        <svg lucideFileImage aria-hidden="true" class="h-5 w-5"></svg>
-                        }
-                        @case ('text') {
-                        <svg lucideFileText aria-hidden="true" class="h-5 w-5"></svg>
-                        }
-                        @default {
-                        <svg lucideFile aria-hidden="true" class="h-5 w-5"></svg>
-                        }
-                        }
-                        }
-                      </div>
-                      <span class="font-extrabold">{{ file.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{{ file.mimeType }}</td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{{ file.updatedAt }}</td>
-                  <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{{ file.size }}</td>
-                  <td class="px-5 py-4">
-                    <div class="flex justify-end">
+                      [style.left.px]="actionMenuPosition().left"
+                    >
                       <button
                         type="button"
-                        (click)="toggleActionMenu(file.id, $event)"
-                        [disabled]="downloadingFileId() !== null || deletingFileId() !== null"
-                        class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-                        aria-label="เมนูไฟล์">
-                        <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
-                      </button>
-                    </div>
-
-                    @if (openActionFileId() === file.id) {
-                    <div
-                      class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
-                      [style.top.px]="actionMenuPosition().top"
-                      [style.left.px]="actionMenuPosition().left">
-                      <button type="button" (click)="downloadFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
-                        <svg lucideDownload aria-hidden="true" class="h-4 w-4" [class.animate-bounce]="downloadingFileId() === file.id"></svg>
-                        ดาวน์โหลด
-                      </button>
-                      <button type="button" (click)="openRenameDialog(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
+                        (click)="$event.stopPropagation(); openRenameFolderDialog(folder)"
+                        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      >
                         <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
                         เปลี่ยนชื่อ
                       </button>
-                      <button type="button" (click)="moveFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); moveFolder(folder)"
+                        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      >
                         <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
                         ย้ายตำแหน่ง
                       </button>
-                      <button type="button" (click)="deleteFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10">
-                        <svg lucideTrash2 aria-hidden="true" class="h-4 w-4" [class.animate-pulse]="deletingFileId() === file.id"></svg>
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); deleteFolder(folder)"
+                        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10 dark:hover:text-rose-200"
+                      >
+                        <svg
+                          lucideTrash2
+                          aria-hidden="true"
+                          class="h-4 w-4"
+                          [class.animate-pulse]="deletingFolderId() === folder.id"
+                        ></svg>
                         ลบ
                       </button>
                     </div>
+                  }
+                </article>
+              }
+
+              @for (file of sortedFiles(); track file.id) {
+                <article
+                  [class.border-blue-500]="isFileSelected(file.id)"
+                  [class.ring-4]="isFileSelected(file.id)"
+                  [class.ring-blue-100]="isFileSelected(file.id)"
+                  [class.dark:border-cyan-300]="isFileSelected(file.id)"
+                  [class.dark:ring-cyan-300/10]="isFileSelected(file.id)"
+                  class="group rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900"
+                >
+                  <div
+                    class="relative grid aspect-4/3 place-items-center overflow-hidden border-b border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <label
+                      class="absolute left-3 top-3 z-10 grid h-8 w-8 cursor-pointer place-items-center rounded-lg bg-white/90 shadow-sm backdrop-blur hover:bg-white dark:bg-slate-950/80 dark:hover:bg-slate-900"
+                      aria-label="เลือกไฟล์"
+                    >
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 cursor-pointer accent-blue-600 dark:accent-cyan-300"
+                        [checked]="isFileSelected(file.id)"
+                        [disabled]="bulkDeleting()"
+                        (click)="$event.stopPropagation()"
+                        (change)="toggleFileSelection(file, $event)"
+                      />
+                    </label>
+                    @if (file.previewUrl) {
+                      <img
+                        [src]="file.previewUrl"
+                        [alt]="file.name"
+                        class="h-full w-full object-contain p-5"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    } @else if (fileIconAsset(file); as iconSrc) {
+                      <img
+                        [src]="iconSrc"
+                        [alt]="file.name + ' icon'"
+                        class="h-18 w-18 object-contain drop-shadow-sm"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    } @else {
+                      <div
+                        class="grid h-18 w-18 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                      >
+                        @switch (fileIcon(file.type)) {
+                          @case ('image') {
+                            <svg lucideFileImage aria-hidden="true" class="h-9 w-9"></svg>
+                          }
+                          @case ('text') {
+                            <svg lucideFileText aria-hidden="true" class="h-9 w-9"></svg>
+                          }
+                          @default {
+                            <svg lucideFile aria-hidden="true" class="h-9 w-9"></svg>
+                          }
+                        }
+                      </div>
                     }
-                  </td>
-                </tr>
-                }
-                }
-              </tbody>
-            </table>
-          </div>
+
+                    <button
+                      type="button"
+                      (click)="toggleActionMenu(file.id, $event)"
+                      [disabled]="downloadingFileId() !== null || deletingFileId() !== null"
+                      [class.opacity-100]="openActionFileId() === file.id"
+                      class="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-white/90 text-slate-500 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white hover:text-slate-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-950/80 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100"
+                      aria-label="เมนูไฟล์"
+                    >
+                      <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
+                    </button>
+                  </div>
+
+                  <div class="grid min-w-0 gap-4 p-4">
+                    <div class="min-w-0">
+                      <h3
+                        class="my-drive-grid-file-name m-0 text-sm font-black"
+                        [title]="file.name"
+                      >
+                        {{ file.name }}
+                      </h3>
+                      <div
+                        class="mt-3 grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400"
+                      >
+                        <span>{{ file.size }}</span>
+                        <span>{{ file.updatedAt }}</span>
+                      </div>
+                    </div>
+
+                    @if (openActionFileId() === file.id) {
+                      <div
+                        class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+                        [style.top.px]="actionMenuPosition().top"
+                        [style.left.px]="actionMenuPosition().left"
+                      >
+                        <button
+                          type="button"
+                          (click)="downloadFile(file)"
+                          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                        >
+                          <svg
+                            lucideDownload
+                            aria-hidden="true"
+                            class="h-4 w-4"
+                            [class.animate-bounce]="downloadingFileId() === file.id"
+                          ></svg>
+                          ดาวน์โหลด
+                        </button>
+                        <button
+                          type="button"
+                          (click)="openRenameDialog(file)"
+                          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                        >
+                          <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
+                          เปลี่ยนชื่อ
+                        </button>
+                        <button
+                          type="button"
+                          (click)="moveFile(file)"
+                          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                        >
+                          <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
+                          ย้ายตำแหน่ง
+                        </button>
+                        <button
+                          type="button"
+                          (click)="openShareDialog(file)"
+                          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                        >
+                          <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
+                          แชร์
+                        </button>
+                        <button
+                          type="button"
+                          (click)="deleteFile(file)"
+                          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10"
+                        >
+                          <svg
+                            lucideTrash2
+                            aria-hidden="true"
+                            class="h-4 w-4"
+                            [class.animate-pulse]="deletingFileId() === file.id"
+                          ></svg>
+                          ลบ
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-170 border-collapse text-left">
+                <thead class="text-xs font-extrabold uppercase text-slate-400">
+                  <tr>
+                    <th class="w-12 px-5 py-3">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 cursor-pointer accent-blue-600 dark:accent-cyan-300"
+                        [checked]="allFilesSelected()"
+                        [disabled]="files().length === 0 || bulkDeleting()"
+                        (change)="toggleSelectAllFiles()"
+                        aria-label="เลือกไฟล์ทั้งหมด"
+                      />
+                    </th>
+                    <th class="px-5 py-3">
+                      <button
+                        type="button"
+                        (click)="sortBy('name')"
+                        class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
+                      >
+                        ชื่อ <span class="min-w-3">{{ sortIndicator('name') }}</span>
+                      </button>
+                    </th>
+                    <th class="px-5 py-3">
+                      <button
+                        type="button"
+                        (click)="sortBy('type')"
+                        class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
+                      >
+                        ประเภท <span class="min-w-3">{{ sortIndicator('type') }}</span>
+                      </button>
+                    </th>
+                    <th class="px-5 py-3">
+                      <button
+                        type="button"
+                        (click)="sortBy('updated')"
+                        class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
+                      >
+                        แก้ไขล่าสุด <span class="min-w-3">{{ sortIndicator('updated') }}</span>
+                      </button>
+                    </th>
+                    <th class="px-5 py-3">
+                      <button
+                        type="button"
+                        (click)="sortBy('size')"
+                        class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
+                      >
+                        ขนาด <span class="min-w-3">{{ sortIndicator('size') }}</span>
+                      </button>
+                    </th>
+                    <th class="px-5 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-blue-50 dark:divide-slate-800">
+                  @if (loading()) {
+                    <tr>
+                      <td colspan="6" class="px-5 py-6">
+                        <div class="grid gap-4">
+                          @for (row of [1, 2, 3, 4]; track row) {
+                            <div
+                              class="grid animate-pulse grid-cols-[minmax(220px,1fr)_120px_160px_90px_120px] items-center gap-5"
+                            >
+                              <div class="flex items-center gap-3">
+                                <div
+                                  class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-slate-800"
+                                ></div>
+                                <div
+                                  class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"
+                                ></div>
+                              </div>
+                              <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+                              <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+                              <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+                              <div class="h-9 rounded-lg bg-slate-100 dark:bg-slate-800"></div>
+                            </div>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @else if (loadError()) {
+                    <tr>
+                      <td colspan="6" class="px-5 py-10 text-center">
+                        <p class="m-0 text-sm font-bold text-violet-700 dark:text-cyan-200">
+                          {{ loadError() }}
+                        </p>
+                        <button
+                          type="button"
+                          (click)="loadFiles()"
+                          class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950"
+                        >
+                          <svg lucideRefreshCw aria-hidden="true" class="h-4 w-4"></svg>
+                          ลองใหม่
+                        </button>
+                      </td>
+                    </tr>
+                  } @else if (folders().length === 0 && files().length === 0) {
+                    <tr>
+                      <td
+                        colspan="6"
+                        class="px-5 py-12 text-center text-sm font-bold text-slate-500 dark:text-slate-400"
+                      >
+                        ยังไม่มีไฟล์ในไดรฟ์ของคุณ
+                      </td>
+                    </tr>
+                  } @else {
+                    @for (folder of sortedFolders(); track folder.id) {
+                      <tr
+                        role="button"
+                        tabindex="0"
+                        (click)="openFolder(folder)"
+                        (keydown.enter)="openFolder(folder)"
+                        (keydown.space)="openFolder(folder)"
+                        class="cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-inset focus:ring-blue-100 dark:hover:bg-slate-800/60 dark:focus:ring-cyan-300/10"
+                      >
+                        <td class="px-5 py-4"></td>
+                        <td class="px-5 py-4">
+                          <div class="flex items-center gap-3">
+                            <div
+                              class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                            >
+                              <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
+                            </div>
+                            <span class="font-extrabold">{{ folder.name }}</span>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          โฟลเดอร์
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          {{ folder.updatedAt }}
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">-</td>
+                        <td class="px-5 py-4">
+                          <div class="flex justify-end">
+                            <button
+                              type="button"
+                              (click)="toggleFolderActionMenu(folder.id, $event)"
+                              [disabled]="renamingFolderId() !== null"
+                              class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                              aria-label="เมนูโฟลเดอร์"
+                            >
+                              <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
+                            </button>
+                          </div>
+
+                          @if (openActionFolderId() === folder.id) {
+                            <div
+                              class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+                              [style.top.px]="actionMenuPosition().top"
+                              [style.left.px]="actionMenuPosition().left"
+                            >
+                              <button
+                                type="button"
+                                (click)="$event.stopPropagation(); openRenameFolderDialog(folder)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
+                                เปลี่ยนชื่อ
+                              </button>
+                              <button
+                                type="button"
+                                (click)="$event.stopPropagation(); moveFolder(folder)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
+                                ย้ายตำแหน่ง
+                              </button>
+                              <button
+                                type="button"
+                                (click)="$event.stopPropagation(); deleteFolder(folder)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10 dark:hover:text-rose-200"
+                              >
+                                <svg
+                                  lucideTrash2
+                                  aria-hidden="true"
+                                  class="h-4 w-4"
+                                  [class.animate-pulse]="deletingFolderId() === folder.id"
+                                ></svg>
+                                ลบ
+                              </button>
+                            </div>
+                          }
+                        </td>
+                      </tr>
+                    }
+
+                    @for (file of sortedFiles(); track file.id) {
+                      <tr
+                        [class.bg-blue-50]="isFileSelected(file.id)"
+                        [class.dark:bg-cyan-300/10]="isFileSelected(file.id)"
+                        class="hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      >
+                        <td class="px-5 py-4">
+                          <input
+                            type="checkbox"
+                            class="h-4 w-4 cursor-pointer accent-blue-600 dark:accent-cyan-300"
+                            [checked]="isFileSelected(file.id)"
+                            [disabled]="bulkDeleting()"
+                            (change)="toggleFileSelection(file, $event)"
+                            aria-label="เลือกไฟล์"
+                          />
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="flex items-center gap-3">
+                            <div
+                              class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                            >
+                              @if (fileIconAsset(file); as iconSrc) {
+                                <img
+                                  [src]="iconSrc"
+                                  [alt]="file.name + ' icon'"
+                                  class="h-7 w-7 object-contain"
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              } @else {
+                                @switch (fileIcon(file.type)) {
+                                  @case ('image') {
+                                    <svg lucideFileImage aria-hidden="true" class="h-5 w-5"></svg>
+                                  }
+                                  @case ('text') {
+                                    <svg lucideFileText aria-hidden="true" class="h-5 w-5"></svg>
+                                  }
+                                  @default {
+                                    <svg lucideFile aria-hidden="true" class="h-5 w-5"></svg>
+                                  }
+                                }
+                              }
+                            </div>
+                            <span class="font-extrabold">{{ file.name }}</span>
+                          </div>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          {{ file.mimeType }}
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          {{ file.updatedAt }}
+                        </td>
+                        <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                          {{ file.size }}
+                        </td>
+                        <td class="px-5 py-4">
+                          <div class="flex justify-end">
+                            <button
+                              type="button"
+                              (click)="toggleActionMenu(file.id, $event)"
+                              [disabled]="downloadingFileId() !== null || deletingFileId() !== null"
+                              class="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                              aria-label="เมนูไฟล์"
+                            >
+                              <svg lucideMoreVertical aria-hidden="true" class="h-4 w-4"></svg>
+                            </button>
+                          </div>
+
+                          @if (openActionFileId() === file.id) {
+                            <div
+                              class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+                              [style.top.px]="actionMenuPosition().top"
+                              [style.left.px]="actionMenuPosition().left"
+                            >
+                              <button
+                                type="button"
+                                (click)="downloadFile(file)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg
+                                  lucideDownload
+                                  aria-hidden="true"
+                                  class="h-4 w-4"
+                                  [class.animate-bounce]="downloadingFileId() === file.id"
+                                ></svg>
+                                ดาวน์โหลด
+                              </button>
+                              <button
+                                type="button"
+                                (click)="openRenameDialog(file)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
+                                เปลี่ยนชื่อ
+                              </button>
+                              <button
+                                type="button"
+                                (click)="moveFile(file)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucideMoveRight aria-hidden="true" class="h-4 w-4"></svg>
+                                ย้ายตำแหน่ง
+                              </button>
+                              <button
+                                type="button"
+                                (click)="openShareDialog(file)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
+                                แชร์
+                              </button>
+                              <button
+                                type="button"
+                                (click)="deleteFile(file)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10"
+                              >
+                                <svg
+                                  lucideTrash2
+                                  aria-hidden="true"
+                                  class="h-4 w-4"
+                                  [class.animate-pulse]="deletingFileId() === file.id"
+                                ></svg>
+                                ลบ
+                              </button>
+                            </div>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
           }
         </section>
       </div>
     </section>
   </div>
 
+  @if (deleteTarget()) {
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-delete-file-title"
+    >
+      <section
+        class="w-full max-w-md rounded-xl border border-rose-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-rose-300/20 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-start gap-3">
+          <div
+            class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-300/10 dark:text-rose-300"
+          >
+            <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
+          </div>
+          <div class="min-w-0">
+            <h2 id="my-drive-delete-file-title" class="m-0 text-xl font-black tracking-normal">
+              ลบไฟล์นี้?
+            </h2>
+            <p class="m-0 mt-2 text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+              ไฟล์
+              <span class="text-slate-900 dark:text-slate-100">{{ deleteTarget()?.name }}</span>
+              จะถูกย้ายไปถังขยะ
+            </p>
+          </div>
+        </div>
+
+        @if (actionError()) {
+          <p
+            class="m-0 mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ actionError() }}
+          </p>
+        }
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelDeleteFile()"
+            [disabled]="deletingFileId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="confirmDeleteFile()"
+            [disabled]="deletingFileId() !== null"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-rose-600 px-4 text-sm font-extrabold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg
+              lucideTrash2
+              aria-hidden="true"
+              class="h-4 w-4"
+              [class.animate-pulse]="deletingFileId() !== null"
+            ></svg>
+            {{ deletingFileId() !== null ? 'กำลังลบ...' : 'ลบไฟล์' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (bulkDeleteDialogOpen()) {
+    <div
+      class="fixed inset-0 z-60rid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-bulk-delete-title"
+    >
+      <section
+        class="w-full max-w-md rounded-xl border border-rose-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-rose-300/20 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-start gap-3">
+          <div
+            class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-300/10 dark:text-rose-300"
+          >
+            <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
+          </div>
+          <div class="min-w-0">
+            <h2 id="my-drive-bulk-delete-title" class="m-0 text-xl font-black tracking-normal">
+              ลบไฟล์ที่เลือก?
+            </h2>
+            <p class="m-0 mt-2 text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+              ไฟล์ {{ selectedFileCount() }} รายการจะถูกย้ายไปถังขยะ
+            </p>
+          </div>
+        </div>
+
+        @if (bulkDeleteError()) {
+          <p
+            class="m-0 mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ bulkDeleteError() }}
+          </p>
+        }
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelBulkDeleteFiles()"
+            [disabled]="bulkDeleting()"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="confirmBulkDeleteFiles()"
+            [disabled]="bulkDeleting() || selectedFileCount() === 0"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-rose-600 px-4 text-sm font-extrabold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg
+              lucideTrash2
+              aria-hidden="true"
+              class="h-4 w-4"
+              [class.animate-pulse]="bulkDeleting()"
+            ></svg>
+            {{ bulkDeleting() ? 'กำลังลบ...' : 'ลบไฟล์' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (deleteFolderTarget()) {
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-delete-folder-title"
+    >
+      <section
+        class="w-full max-w-md rounded-xl border border-rose-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-rose-300/20 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-start gap-3">
+          <div
+            class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-300/10 dark:text-rose-300"
+          >
+            <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
+          </div>
+          <div class="min-w-0">
+            <h2 id="my-drive-delete-folder-title" class="m-0 text-xl font-black tracking-normal">
+              ลบโฟลเดอร์นี้?
+            </h2>
+            <p class="m-0 mt-2 text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+              โฟลเดอร์
+              <span class="text-slate-900 dark:text-slate-100">{{
+                deleteFolderTarget()?.name
+              }}</span>
+              จะถูกย้ายไปถังขยะ
+            </p>
+            <p class="m-0 mt-1 text-xs font-bold leading-5 text-slate-400 dark:text-slate-500">
+              ตอนนี้ระบบลบได้เฉพาะโฟลเดอร์ที่ไม่มีไฟล์หรือโฟลเดอร์ย่อย
+            </p>
+          </div>
+        </div>
+
+        @if (deleteFolderError()) {
+          <p
+            class="m-0 mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ deleteFolderError() }}
+          </p>
+        }
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelDeleteFolder()"
+            [disabled]="deletingFolderId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="confirmDeleteFolder()"
+            [disabled]="deletingFolderId() !== null"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-rose-600 px-4 text-sm font-extrabold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg
+              lucideTrash2
+              aria-hidden="true"
+              class="h-4 w-4"
+              [class.animate-pulse]="deletingFolderId() !== null"
+            ></svg>
+            {{ deletingFolderId() !== null ? 'กำลังลบ...' : 'ลบโฟลเดอร์' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
   @if (createFolderDialogOpen()) {
-  <div class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="my-drive-create-folder-title">
-    <form
-      (submit)="submitCreateFolder($event)"
-      class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <h2 id="my-drive-create-folder-title" class="m-0 text-xl font-black tracking-normal">สร้างโฟลเดอร์ใหม่</h2>
-        <button
-          type="button"
-          (click)="cancelCreateFolder()"
-          [disabled]="creatingFolder()"
-          class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="ปิด">
-          <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
-        </button>
-      </div>
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-create-folder-title"
+    >
+      <form
+        (submit)="submitCreateFolder($event)"
+        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <h2 id="my-drive-create-folder-title" class="m-0 text-xl font-black tracking-normal">
+            สร้างโฟลเดอร์ใหม่
+          </h2>
+          <button
+            type="button"
+            (click)="cancelCreateFolder()"
+            [disabled]="creatingFolder()"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
+          </button>
+        </div>
 
-      <label for="myDriveFolderName" class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200">ชื่อโฟลเดอร์</label>
-      <input
-        id="myDriveFolderName"
-        type="text"
-        [value]="newFolderName()"
-        (input)="newFolderName.set($any($event.target).value)"
-        [disabled]="creatingFolder()"
-        class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
-        autofocus />
-
-      @if (createFolderError()) {
-      <p class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ createFolderError() }}</p>
-      }
-
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelCreateFolder()"
+        <label
+          for="myDriveFolderName"
+          class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+          >ชื่อโฟลเดอร์</label
+        >
+        <input
+          id="myDriveFolderName"
+          type="text"
+          [value]="newFolderName()"
+          (input)="newFolderName.set($any($event.target).value)"
           [disabled]="creatingFolder()"
-          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
-          ยกเลิก
-        </button>
-        <button
-          type="submit"
-          [disabled]="creatingFolder()"
-          class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-          {{ creatingFolder() ? 'กำลังสร้าง...' : 'สร้าง' }}
-        </button>
-      </div>
-    </form>
-  </div>
+          class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+          autofocus
+        />
+
+        @if (createFolderError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ createFolderError() }}
+          </p>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelCreateFolder()"
+            [disabled]="creatingFolder()"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            [disabled]="creatingFolder()"
+            class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            {{ creatingFolder() ? 'กำลังสร้าง...' : 'สร้าง' }}
+          </button>
+        </div>
+      </form>
+    </div>
   }
 
   @if (moveFolderTarget()) {
-  <div class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="my-drive-move-folder-title">
-    <section class="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <div class="min-w-0">
-          <h2 id="my-drive-move-folder-title" class="m-0 text-xl font-black tracking-normal">ย้ายโฟลเดอร์</h2>
-          <p class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400" [title]="moveFolderTarget()?.name">{{ moveFolderTarget()?.name }}</p>
-        </div>
-        <button
-          type="button"
-          (click)="cancelMoveFolder()"
-          [disabled]="movingFolderId() !== null"
-          class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="ปิด">
-          <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
-        </button>
-      </div>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400">
-        <button type="button" (click)="openMoveFolderRoot()" class="font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">
-          ไฟล์ของฉัน
-        </button>
-        @for (folder of moveFolderDestinationPath(); track folder.id; let index = $index) {
-        <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
-        <button type="button" (click)="openMoveFolderDestinationPath(index)" class="max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300" [title]="folder.name">
-          {{ folder.name }}
-        </button>
-        }
-      </div>
-
-      <div class="max-h-72 overflow-y-auto rounded-lg border border-blue-100 dark:border-slate-800">
-        @if (moveFolderChoicesLoading()) {
-        <div class="grid gap-2 p-3">
-          @for (row of [1, 2, 3]; track row) {
-          <div class="flex animate-pulse items-center gap-3 rounded-lg p-2">
-            <div class="h-9 w-9 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
-            <div class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+    <div
+      class="fixed inset-0 z-60rid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-move-folder-title"
+    >
+      <section
+        class="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <h2 id="my-drive-move-folder-title" class="m-0 text-xl font-black tracking-normal">
+              ย้ายโฟลเดอร์
+            </h2>
+            <p
+              class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400"
+              [title]="moveFolderTarget()?.name"
+            >
+              {{ moveFolderTarget()?.name }}
+            </p>
           </div>
-          }
-        </div>
-        } @else if (moveFolderChoices().length === 0) {
-        <p class="m-0 px-4 py-8 text-center text-sm font-bold text-slate-500 dark:text-slate-400">ไม่มีโฟลเดอร์ย่อย</p>
-        } @else {
-        <div class="divide-y divide-blue-50 dark:divide-slate-800">
-          @for (folder of moveFolderChoices(); track folder.id) {
-          <button type="button" (click)="openMoveFolderDestination(folder)" class="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-blue-50 dark:hover:bg-cyan-300/10">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-              <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
-            </span>
-            <span class="min-w-0 flex-1 truncate text-sm font-extrabold text-slate-700 dark:text-slate-100">{{ folder.name }}</span>
-            <svg lucideChevronRight aria-hidden="true" class="h-4 w-4 text-slate-400"></svg>
+          <button
+            type="button"
+            (click)="cancelMoveFolder()"
+            [disabled]="movingFolderId() !== null"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
           </button>
+        </div>
+
+        <div
+          class="mb-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400"
+        >
+          <button
+            type="button"
+            (click)="openMoveFolderRoot()"
+            class="font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+          >
+            ไฟล์ของฉัน
+          </button>
+          @for (folder of moveFolderDestinationPath(); track folder.id; let index = $index) {
+            <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
+            <button
+              type="button"
+              (click)="openMoveFolderDestinationPath(index)"
+              class="max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+              [title]="folder.name"
+            >
+              {{ folder.name }}
+            </button>
           }
         </div>
+
+        <div
+          class="max-h-72 overflow-y-auto rounded-lg border border-blue-100 dark:border-slate-800"
+        >
+          @if (moveFolderChoicesLoading()) {
+            <div class="grid gap-2 p-3">
+              @for (row of [1, 2, 3]; track row) {
+                <div class="flex animate-pulse items-center gap-3 rounded-lg p-2">
+                  <div class="h-9 w-9 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
+                  <div class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+              }
+            </div>
+          } @else if (moveFolderChoices().length === 0) {
+            <p
+              class="m-0 px-4 py-8 text-center text-sm font-bold text-slate-500 dark:text-slate-400"
+            >
+              ไม่มีโฟลเดอร์ย่อย
+            </p>
+          } @else {
+            <div class="divide-y divide-blue-50 dark:divide-slate-800">
+              @for (folder of moveFolderChoices(); track folder.id) {
+                <button
+                  type="button"
+                  (click)="openMoveFolderDestination(folder)"
+                  class="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-blue-50 dark:hover:bg-cyan-300/10"
+                >
+                  <span
+                    class="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                  >
+                    <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
+                  </span>
+                  <span
+                    class="min-w-0 flex-1 truncate text-sm font-extrabold text-slate-700 dark:text-slate-100"
+                    >{{ folder.name }}</span
+                  >
+                  <svg lucideChevronRight aria-hidden="true" class="h-4 w-4 text-slate-400"></svg>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (moveFolderError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ moveFolderError() }}
+          </p>
         }
-      </div>
 
-      @if (moveFolderError()) {
-      <p class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ moveFolderError() }}</p>
-      }
-
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelMoveFolder()"
-          [disabled]="movingFolderId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
-          ยกเลิก
-        </button>
-        <button
-          type="button"
-          (click)="submitMoveFolder()"
-          [disabled]="movingFolderId() !== null || moveFolderChoicesLoading() || moveFolderTarget()?.parentId === moveFolderDestinationId()"
-          class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-          {{ movingFolderId() !== null ? 'กำลังย้าย...' : 'ย้ายมาที่นี่' }}
-        </button>
-      </div>
-    </section>
-  </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelMoveFolder()"
+            [disabled]="movingFolderId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="submitMoveFolder()"
+            [disabled]="
+              movingFolderId() !== null ||
+              moveFolderChoicesLoading() ||
+              moveFolderTarget()?.parentId === moveFolderDestinationId()
+            "
+            class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            {{ movingFolderId() !== null ? 'กำลังย้าย...' : 'ย้ายมาที่นี่' }}
+          </button>
+        </div>
+      </section>
+    </div>
   }
 
   @if (moveTarget()) {
-  <div class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="my-drive-move-title">
-    <section class="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <div class="min-w-0">
-          <h2 id="my-drive-move-title" class="m-0 text-xl font-black tracking-normal">ย้ายไฟล์</h2>
-          <p class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400" [title]="moveTarget()?.name">{{ moveTarget()?.name }}</p>
-        </div>
-        <button
-          type="button"
-          (click)="cancelMove()"
-          [disabled]="movingFileId() !== null"
-          class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="ปิด">
-          <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
-        </button>
-      </div>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400">
-        <button type="button" (click)="openMoveRoot()" class="font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">
-          ไฟล์ของฉัน
-        </button>
-        @for (folder of moveFolderPath(); track folder.id; let index = $index) {
-        <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
-        <button type="button" (click)="openMoveFolderPath(index)" class="max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300" [title]="folder.name">
-          {{ folder.name }}
-        </button>
-        }
-      </div>
-
-      <div class="max-h-72 overflow-y-auto rounded-lg border border-blue-100 dark:border-slate-800">
-        @if (moveFoldersLoading()) {
-        <div class="grid gap-2 p-3">
-          @for (row of [1, 2, 3]; track row) {
-          <div class="flex animate-pulse items-center gap-3 rounded-lg p-2">
-            <div class="h-9 w-9 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
-            <div class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-move-title"
+    >
+      <section
+        class="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <h2 id="my-drive-move-title" class="m-0 text-xl font-black tracking-normal">
+              ย้ายไฟล์
+            </h2>
+            <p
+              class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400"
+              [title]="moveTarget()?.name"
+            >
+              {{ moveTarget()?.name }}
+            </p>
           </div>
-          }
-        </div>
-        } @else if (moveFolders().length === 0) {
-        <p class="m-0 px-4 py-8 text-center text-sm font-bold text-slate-500 dark:text-slate-400">ไม่มีโฟลเดอร์ย่อย</p>
-        } @else {
-        <div class="divide-y divide-blue-50 dark:divide-slate-800">
-          @for (folder of moveFolders(); track folder.id) {
-          <button type="button" (click)="openMoveFolder(folder)" class="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-blue-50 dark:hover:bg-cyan-300/10">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-              <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
-            </span>
-            <span class="min-w-0 flex-1 truncate text-sm font-extrabold text-slate-700 dark:text-slate-100">{{ folder.name }}</span>
-            <svg lucideChevronRight aria-hidden="true" class="h-4 w-4 text-slate-400"></svg>
+          <button
+            type="button"
+            (click)="cancelMove()"
+            [disabled]="movingFileId() !== null"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
           </button>
+        </div>
+
+        <div
+          class="mb-3 flex flex-wrap items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400"
+        >
+          <button
+            type="button"
+            (click)="openMoveRoot()"
+            class="font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+          >
+            ไฟล์ของฉัน
+          </button>
+          @for (folder of moveFolderPath(); track folder.id; let index = $index) {
+            <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
+            <button
+              type="button"
+              (click)="openMoveFolderPath(index)"
+              class="max-w-40 truncate font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
+              [title]="folder.name"
+            >
+              {{ folder.name }}
+            </button>
           }
         </div>
+
+        <div
+          class="max-h-72 overflow-y-auto rounded-lg border border-blue-100 dark:border-slate-800"
+        >
+          @if (moveFoldersLoading()) {
+            <div class="grid gap-2 p-3">
+              @for (row of [1, 2, 3]; track row) {
+                <div class="flex animate-pulse items-center gap-3 rounded-lg p-2">
+                  <div class="h-9 w-9 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
+                  <div class="h-3 w-7/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+              }
+            </div>
+          } @else if (moveFolders().length === 0) {
+            <p
+              class="m-0 px-4 py-8 text-center text-sm font-bold text-slate-500 dark:text-slate-400"
+            >
+              ไม่มีโฟลเดอร์ย่อย
+            </p>
+          } @else {
+            <div class="divide-y divide-blue-50 dark:divide-slate-800">
+              @for (folder of moveFolders(); track folder.id) {
+                <button
+                  type="button"
+                  (click)="openMoveFolder(folder)"
+                  class="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-blue-50 dark:hover:bg-cyan-300/10"
+                >
+                  <span
+                    class="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300"
+                  >
+                    <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
+                  </span>
+                  <span
+                    class="min-w-0 flex-1 truncate text-sm font-extrabold text-slate-700 dark:text-slate-100"
+                    >{{ folder.name }}</span
+                  >
+                  <svg lucideChevronRight aria-hidden="true" class="h-4 w-4 text-slate-400"></svg>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (moveError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ moveError() }}
+          </p>
         }
-      </div>
 
-      @if (moveError()) {
-      <p class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ moveError() }}</p>
-      }
-
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelMove()"
-          [disabled]="movingFileId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
-          ยกเลิก
-        </button>
-        <button
-          type="button"
-          (click)="submitMove()"
-          [disabled]="movingFileId() !== null || moveFoldersLoading() || moveTarget()?.folderId === moveDestinationId()"
-          class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-          {{ movingFileId() !== null ? 'กำลังย้าย...' : 'ย้ายมาที่นี่' }}
-        </button>
-      </div>
-    </section>
-  </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelMove()"
+            [disabled]="movingFileId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="submitMove()"
+            [disabled]="
+              movingFileId() !== null ||
+              moveFoldersLoading() ||
+              moveTarget()?.folderId === moveDestinationId()
+            "
+            class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            {{ movingFileId() !== null ? 'กำลังย้าย...' : 'ย้ายมาที่นี่' }}
+          </button>
+        </div>
+      </section>
+    </div>
   }
 
   @if (renameFolderTarget()) {
-  <div class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="my-drive-rename-folder-title">
-    <form
-      (submit)="submitRenameFolder($event)"
-      class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <h2 id="my-drive-rename-folder-title" class="m-0 text-xl font-black tracking-normal">เปลี่ยนชื่อโฟลเดอร์</h2>
-        <button
-          type="button"
-          (click)="cancelRenameFolder()"
-          [disabled]="renamingFolderId() !== null"
-          class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="ปิด">
-          <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
-        </button>
-      </div>
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-rename-folder-title"
+    >
+      <form
+        (submit)="submitRenameFolder($event)"
+        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <h2 id="my-drive-rename-folder-title" class="m-0 text-xl font-black tracking-normal">
+            เปลี่ยนชื่อโฟลเดอร์
+          </h2>
+          <button
+            type="button"
+            (click)="cancelRenameFolder()"
+            [disabled]="renamingFolderId() !== null"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
+          </button>
+        </div>
 
-      <label for="myDriveRenameFolderName" class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200">ชื่อโฟลเดอร์</label>
-      <input
-        id="myDriveRenameFolderName"
-        type="text"
-        [value]="renameFolderName()"
-        (input)="renameFolderName.set($any($event.target).value)"
-        [disabled]="renamingFolderId() !== null"
-        class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
-        autofocus />
-
-      @if (renameFolderError()) {
-      <p class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ renameFolderError() }}</p>
-      }
-
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelRenameFolder()"
+        <label
+          for="myDriveRenameFolderName"
+          class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+          >ชื่อโฟลเดอร์</label
+        >
+        <input
+          id="myDriveRenameFolderName"
+          type="text"
+          [value]="renameFolderName()"
+          (input)="renameFolderName.set($any($event.target).value)"
           [disabled]="renamingFolderId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
-          ยกเลิก
-        </button>
-        <button
-          type="submit"
-          [disabled]="renamingFolderId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-          {{ renamingFolderId() !== null ? 'กำลังบันทึก...' : 'ตกลง' }}
-        </button>
-      </div>
-    </form>
-  </div>
+          class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+          autofocus
+        />
+
+        @if (renameFolderError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ renameFolderError() }}
+          </p>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelRenameFolder()"
+            [disabled]="renamingFolderId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            [disabled]="renamingFolderId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            {{ renamingFolderId() !== null ? 'กำลังบันทึก...' : 'ตกลง' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (shareTarget()) {
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-share-title"
+    >
+      <form
+        (submit)="shareMode() === 'user' ? submitShare($event) : createPublicShareLink($event)"
+        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <h2 id="my-drive-share-title" class="m-0 text-xl font-black tracking-normal">
+              แชร์ไฟล์
+            </h2>
+            <p
+              class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400"
+              [title]="shareTarget()?.name"
+            >
+              {{ shareTarget()?.name }}
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="cancelShare()"
+            [disabled]="sharingFileId() !== null || creatingShareLink()"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
+          </button>
+        </div>
+
+        <div
+          class="mb-4 grid grid-cols-2 rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950"
+        >
+          <button
+            type="button"
+            (click)="setShareMode('user')"
+            [disabled]="sharingFileId() !== null || creatingShareLink()"
+            [class.bg-white]="shareMode() === 'user'"
+            [class.text-blue-700]="shareMode() === 'user'"
+            [class.shadow-sm]="shareMode() === 'user'"
+            [class.dark:bg-slate-900]="shareMode() === 'user'"
+            [class.dark:text-cyan-300]="shareMode() === 'user'"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold text-slate-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
+          >
+            <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
+            Email
+          </button>
+          <button
+            type="button"
+            (click)="setShareMode('link')"
+            [disabled]="sharingFileId() !== null || creatingShareLink()"
+            [class.bg-white]="shareMode() === 'link'"
+            [class.text-blue-700]="shareMode() === 'link'"
+            [class.shadow-sm]="shareMode() === 'link'"
+            [class.dark:bg-slate-900]="shareMode() === 'link'"
+            [class.dark:text-cyan-300]="shareMode() === 'link'"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold text-slate-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
+          >
+            <svg lucideLink aria-hidden="true" class="h-4 w-4"></svg>
+            Anyone with link
+          </button>
+        </div>
+
+        <div class="grid gap-4">
+          @if (shareMode() === 'user') {
+            <div class="relative">
+              <label
+                for="myDriveShareEmail"
+                class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+                >อีเมลผู้ใช้ที่ต้องการแชร์</label
+              >
+              <input
+                id="myDriveShareEmail"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                placeholder="name@example.com"
+                [value]="shareEmail()"
+                (input)="onShareEmailInput($any($event.target).value)"
+                [disabled]="sharingFileId() !== null"
+                class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+              />
+              @if (shareUserSuggestions().length > 0 || searchingShareUsers()) {
+                <div
+                  class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-70 max-h-64 overflow-y-auto rounded-xl border border-blue-100 bg-white py-2 shadow-[0_18px_45px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900"
+                >
+                  @if (searchingShareUsers()) {
+                    <div class="px-3 py-2 text-sm font-bold text-slate-400">กำลังค้นหา...</div>
+                  }
+                  @for (user of shareUserSuggestions(); track user.id) {
+                    <button
+                      type="button"
+                      (click)="selectShareUser(user)"
+                      class="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-blue-50 dark:hover:bg-cyan-300/10"
+                    >
+                      <span
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-black text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+                      >
+                        {{ user.firstName.charAt(0) || user.email.charAt(0) }}
+                      </span>
+                      <span class="min-w-0">
+                        <span
+                          class="block truncate text-sm font-black text-slate-800 dark:text-slate-100"
+                        >
+                          {{ user.firstName }} {{ user.lastName }}
+                        </span>
+                        <span
+                          class="block truncate text-xs font-bold text-slate-500 dark:text-slate-400"
+                        >
+                          {{ user.email }}
+                        </span>
+                      </span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <div>
+              <label
+                for="myDriveSharePermission"
+                class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+                >สิทธิ์</label
+              >
+              <select
+                id="myDriveSharePermission"
+                [value]="sharePermission()"
+                (change)="sharePermission.set($any($event.target).value)"
+                [disabled]="sharingFileId() !== null"
+                class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+              >
+                <option value="viewer">viewer</option>
+                <option value="editor">editor</option>
+              </select>
+            </div>
+          }
+
+          <div>
+            <label
+              for="myDriveShareExpiresAt"
+              class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+              >วันหมดอายุ (ไม่บังคับ)</label
+            >
+            <input
+              id="myDriveShareExpiresAt"
+              type="datetime-local"
+              [value]="shareExpiresAt()"
+              (input)="shareExpiresAt.set($any($event.target).value)"
+              [disabled]="sharingFileId() !== null || creatingShareLink()"
+              class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+            />
+          </div>
+
+          @if (shareMode() === 'link' && shareLinkUrl()) {
+            <div
+              class="rounded-lg border border-blue-100 bg-blue-50/70 p-3 dark:border-cyan-300/20 dark:bg-cyan-300/10"
+            >
+              <label
+                for="myDrivePublicShareUrl"
+                class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+                >Public link</label
+              >
+              <div class="flex gap-2">
+                <input
+                  id="myDrivePublicShareUrl"
+                  type="text"
+                  readonly
+                  [value]="shareLinkUrl()"
+                  class="min-h-11 min-w-0 flex-1 rounded-lg border border-blue-100 bg-white px-3 text-sm font-bold text-slate-700 outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                />
+                <button
+                  type="button"
+                  (click)="copyShareLink()"
+                  class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-600 text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+                  aria-label="Copy link"
+                >
+                  <svg lucideCopy aria-hidden="true" class="h-4 w-4"></svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (shareMessage()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200"
+          >
+            {{ shareMessage() }}
+          </p>
+        }
+
+        @if (shareError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ shareError() }}
+          </p>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelShare()"
+            [disabled]="sharingFileId() !== null || creatingShareLink()"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            [disabled]="sharingFileId() !== null || creatingShareLink()"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            @if (shareMode() === 'link') {
+              <svg
+                lucideLink
+                aria-hidden="true"
+                class="h-4 w-4"
+                [class.animate-pulse]="creatingShareLink()"
+              ></svg>
+              {{ creatingShareLink() ? 'กำลังสร้างลิงก์...' : 'สร้างลิงก์' }}
+            } @else {
+              <svg
+                lucideShare2
+                aria-hidden="true"
+                class="h-4 w-4"
+                [class.animate-pulse]="sharingFileId() !== null"
+              ></svg>
+              {{ sharingFileId() !== null ? 'กำลังแชร์...' : 'แชร์ไฟล์' }}
+            }
+          </button>
+        </div>
+      </form>
+    </div>
   }
 
   @if (renameTarget()) {
-  <div class="fixed inset-0 z-[60] grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="my-drive-rename-title">
-    <form
-      (submit)="submitRename($event)"
-      class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900">
-      <div class="mb-4 flex items-center justify-between gap-4">
-        <h2 id="my-drive-rename-title" class="m-0 text-xl font-black tracking-normal">เปลี่ยนชื่อ</h2>
-        <button
-          type="button"
-          (click)="cancelRename()"
-          [disabled]="renamingFileId() !== null"
-          class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-          aria-label="ปิด">
-          <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
-        </button>
-      </div>
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-rename-title"
+    >
+      <form
+        (submit)="submitRename($event)"
+        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <h2 id="my-drive-rename-title" class="m-0 text-xl font-black tracking-normal">
+            เปลี่ยนชื่อ
+          </h2>
+          <button
+            type="button"
+            (click)="cancelRename()"
+            [disabled]="renamingFileId() !== null"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
+          </button>
+        </div>
 
-      <label for="myDriveRenameFileName" class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200">ชื่อไฟล์</label>
-      <input
-        id="myDriveRenameFileName"
-        type="text"
-        [value]="renameName()"
-        (input)="renameName.set($any($event.target).value)"
-        [disabled]="renamingFileId() !== null"
-        class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300" />
-
-      @if (renameError()) {
-      <p class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ renameError() }}</p>
-      }
-
-      <div class="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelRename()"
+        <label
+          for="myDriveRenameFileName"
+          class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+          >ชื่อไฟล์</label
+        >
+        <input
+          id="myDriveRenameFileName"
+          type="text"
+          [value]="renameName()"
+          (input)="renameName.set($any($event.target).value)"
           [disabled]="renamingFileId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
-          ยกเลิก
-        </button>
-        <button
-          type="submit"
-          [disabled]="renamingFileId() !== null"
-          class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-          {{ renamingFileId() !== null ? 'กำลังบันทึก...' : 'ตกลง' }}
-        </button>
-      </div>
-    </form>
-  </div>
+          class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+        />
+
+        @if (renameError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ renameError() }}
+          </p>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelRename()"
+            [disabled]="renamingFileId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            [disabled]="renamingFileId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            {{ renamingFileId() !== null ? 'กำลังบันทึก...' : 'ตกลง' }}
+          </button>
+        </div>
+      </form>
+    </div>
   }
 </main>

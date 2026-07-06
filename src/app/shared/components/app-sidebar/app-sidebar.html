@@ -1,66 +1,110 @@
-<aside class="border-r border-blue-100 bg-white px-5 py-5 dark:border-slate-800 dark:bg-slate-900 max-lg:hidden h-full">
-  <a class="mb-8 inline-flex items-center gap-3 no-underline" routerLink="/dashboard" aria-label="AnuCloud dashboard">
-    <img src="/assets/AnuCloud-128.png" width="44" height="44" alt="AnuCloud logo"
-      class="h-11 w-11 rounded-lg object-cover" decoding="async" fetchpriority="high" />
+<aside
+  class="h-full border-r border-blue-100 bg-white px-5 py-5 dark:border-slate-800 dark:bg-slate-900 max-lg:hidden"
+>
+  <a
+    class="mb-8 inline-flex items-center gap-3 no-underline"
+    routerLink="/dashboard"
+    aria-label="AnuCloud dashboard"
+  >
+    <img
+      src="/assets/AnuCloud-128.png"
+      width="44"
+      height="44"
+      alt="AnuCloud logo"
+      class="h-11 w-11 rounded-lg object-cover"
+      decoding="async"
+      fetchpriority="high"
+    />
     <span
-      class="bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-2xl font-black tracking-normal text-transparent">
+      class="bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-2xl font-black tracking-normal text-transparent"
+    >
       AnuCloud
     </span>
   </a>
 
   @if (showUpload()) {
-  <label [for]="uploadTargetId()"
-    class="mb-6 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 px-4 font-black text-white shadow-[0_14px_28px_rgba(37,99,235,0.22)]">
-    <svg lucideUpload aria-hidden="true" class="h-5 w-5" [class.animate-bounce]="uploadBusy()"></svg>
-    {{ uploadText() }}
-  </label>
+    <label
+      [for]="uploadTargetId()"
+      class="mb-6 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 px-4 font-black text-white shadow-[0_14px_28px_rgba(37,99,235,0.22)]"
+    >
+      <svg
+        lucideUpload
+        aria-hidden="true"
+        class="h-5 w-5"
+        [class.animate-bounce]="uploadBusy()"
+      ></svg>
+      {{ uploadText() }}
+    </label>
   }
 
   <nav class="grid gap-1">
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
       routerLink="/dashboard"
       routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
-      [routerLinkActiveOptions]="{ exact: true }">
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
       <svg lucideHome aria-hidden="true" class="h-5 w-5"></svg>
       หน้าแรก
     </a>
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
       routerLink="/my-drive"
-      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300">
+      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
+    >
       <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
       ไฟล์ของฉัน
     </a>
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-      routerLink="/dashboard">
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+      routerLink="/shared-with-me"
+      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
+    >
       <svg lucideShare2 aria-hidden="true" class="h-5 w-5"></svg>
       แชร์กับฉัน
     </a>
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-      routerLink="/dashboard">
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+      routerLink="/dashboard"
+    >
       <svg lucideClock aria-hidden="true" class="h-5 w-5"></svg>
       ล่าสุด
     </a>
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-      routerLink="/dashboard">
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+      routerLink="/dashboard"
+    >
       <svg lucideStar aria-hidden="true" class="h-5 w-5"></svg>
       รายการโปรด
     </a>
-    <a class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
       routerLink="/trash"
-      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300">
+      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
+    >
       <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
       ถังขยะ
     </a>
   </nav>
 
-  <div class="mt-8 rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+  <div
+    class="mt-8 rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+  >
     <div class="mb-3 flex items-center gap-2 text-sm font-extrabold">
-      <svg lucideHardDrive aria-hidden="true" class="h-5 w-5 text-blue-600 dark:text-cyan-300"></svg>
+      <svg
+        lucideHardDrive
+        aria-hidden="true"
+        class="h-5 w-5 text-blue-600 dark:text-cyan-300"
+      ></svg>
       พื้นที่จัดเก็บ
     </div>
     <div class="h-2 overflow-hidden rounded-full bg-blue-100 dark:bg-slate-800">
-      <div class="h-full w-[18%] rounded-full bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400"></div>
+      <div
+        class="h-full w-[18%] rounded-full bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400"
+      ></div>
     </div>
-    <p class="m-0 mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">ใช้ไป 1.8 GB จาก 10 GB</p>
+    <p class="m-0 mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+      ใช้ไป 1.8 GB จาก 10 GB
+    </p>
   </div>
 </aside>

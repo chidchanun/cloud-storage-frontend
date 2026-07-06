@@ -41,6 +41,11 @@ interface ApiMoveFolderResponse {
   parent_id: number | null;
 }
 
+interface ApiDeleteFolderResponse {
+  message: string;
+  folder_id: number;
+}
+
 export interface UserFolder {
   id: number;
   parentId: number | null;
@@ -74,6 +79,11 @@ export interface MoveFolderResponse {
   message: string;
   folderId: number;
   parentId: number | null;
+}
+
+export interface DeleteFolderResponse {
+  message: string;
+  folderId: number;
 }
 
 @Injectable({
@@ -167,6 +177,21 @@ export class FolderService {
           message: response.message,
           folderId: response.folder_id,
           parentId: response.parent_id,
+        })),
+      );
+  }
+
+  deleteFolder(folderId: number): Observable<DeleteFolderResponse> {
+    return this.http
+      .patch<ApiDeleteFolderResponse>(
+        `${this.apiUrl}/${folderId}/delete`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
+          folderId: response.folder_id,
         })),
       );
   }

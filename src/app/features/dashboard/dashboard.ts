@@ -1,12 +1,14 @@
 import {
   afterNextRender,
   Component,
+  computed,
   inject,
   OnDestroy,
   signal,
 } from '@angular/core';
 import {
   Router,
+  ActivatedRoute,
   RouterLink,
 } from '@angular/router';
 import {
@@ -54,7 +56,9 @@ interface DriveFile {
   type: 'document' | 'image' | 'archive' | 'file';
   mimeType: string;
   owner: string;
+  sizeBytes: number;
   size: string;
+  updatedAtTime: number;
   updatedAt: string;
 }
 
@@ -64,6 +68,8 @@ interface ActionMenuPosition {
 }
 
 type FileViewMode = 'grid' | 'list';
+type FileSortField = 'name' | 'type' | 'updated' | 'size';
+type SortDirection = 'asc' | 'desc';
 
 const fileViewModeStorageKey = 'anucloud:file-view-mode';
 
@@ -100,12 +106,15 @@ export class Dashboard implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly fileService = inject(FileService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly previewObjectUrls = new Map<number, string>();
 
   readonly currentUser = this.authService.currentUser;
   readonly loadingFiles = signal(false);
   readonly loadFilesError = signal('');
   readonly uploading = signal(false);
+  readonly uploadProgress = signal(0);
+  readonly uploadProgressLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
 
@@ -113,6 +122,7 @@ export class Dashboard implements OnDestroy {
   readonly downloadMessage = signal('');
   readonly downloadError = signal('');
   readonly deletingFileId = signal<number | null>(null);
+  readonly deleteTarget = signal<DriveFile | null>(null);
   readonly deleteMessage = signal('');
   readonly deleteError = signal('');
   readonly renamingFileId = signal<number | null>(null);
@@ -128,7 +138,10 @@ export class Dashboard implements OnDestroy {
   readonly moveMessage = signal('');
   readonly loggingOut = signal(false);
   readonly fileViewMode = signal<FileViewMode>('list');
+  readonly sortField = signal<FileSortField>('updated');
+  readonly sortDirection = signal<SortDirection>('desc');
   readonly filePreviewUrls = signal<Record<number, string>>({});
+  readonly pageMessage = signal('');
 
   readonly folders: DriveFolder[] = [
     {
@@ -152,8 +165,23 @@ export class Dashboard implements OnDestroy {
   ];
 
   readonly files = signal<DriveFile[]>([]);
+  readonly sortedFiles = computed(() => {
+    const field = this.sortField();
+    const direction = this.sortDirection();
+    const directionWeight = direction === 'asc' ? 1 : -1;
+
+    return [...this.files()].sort((firstFile, secondFile) => {
+      const result = this.compareFiles(firstFile, secondFile, field);
+
+      return result * directionWeight;
+    });
+  });
 
   constructor() {
+    if (this.route.snapshot.queryParamMap.get('verified') === '1') {
+      this.pageMessage.set('Email verified successfully. Welcome to AnuCloud.');
+    }
+
     // Defer the first file fetch so SSR can render the page shell quickly.
     afterNextRender(() => {
       this.restoreFileViewMode();
@@ -231,9 +259,24 @@ export class Dashboard implements OnDestroy {
       return;
     }
 
-    const confirmed = window.confirm(`ลบไฟล์ "${file.name}" ใช่ไหม?`);
+    this.closeActionMenu();
+    this.deleteTarget.set(file);
+    this.deleteMessage.set('');
+    this.deleteError.set('');
+  }
 
-    if (!confirmed) {
+  cancelDeleteFile(): void {
+    if (this.deletingFileId() !== null) {
+      return;
+    }
+
+    this.deleteTarget.set(null);
+  }
+
+  confirmDeleteFile(): void {
+    const file = this.deleteTarget();
+
+    if (!file || this.deletingFileId() !== null) {
       return;
     }
 
@@ -248,6 +291,7 @@ export class Dashboard implements OnDestroy {
           this.revokeFilePreview(file.id);
           this.files.update((files) => files.filter((item) => item.id !== file.id));
           this.deleteMessage.set('ลบไฟล์สำเร็จ');
+          this.deleteTarget.set(null);
         },
         error: () => {
           this.deleteError.set('ไม่สามารถลบไฟล์ได้');
@@ -349,6 +393,24 @@ export class Dashboard implements OnDestroy {
     localStorage.setItem(fileViewModeStorageKey, mode);
   }
 
+  sortBy(field: FileSortField): void {
+    if (this.sortField() === field) {
+      this.sortDirection.update((direction) => direction === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+
+    this.sortField.set(field);
+    this.sortDirection.set(field === 'updated' ? 'desc' : 'asc');
+  }
+
+  sortIndicator(field: FileSortField): string {
+    if (this.sortField() !== field) {
+      return '';
+    }
+
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
+  }
+
   moveFile(file: DriveFile): void {
     this.closeActionMenu();
     this.moveMessage.set(`เลือกตำแหน่งใหม่สำหรับ "${file.name}"`);
@@ -363,19 +425,28 @@ export class Dashboard implements OnDestroy {
     }
 
     this.uploading.set(true);
+    this.uploadProgress.set(0);
+    this.uploadProgressLabel.set(file.name);
     this.uploadError.set('');
     this.uploadMessage.set('');
 
-    this.fileService.upload(file)
+    this.fileService.uploadWithProgress(file)
       .pipe(
         finalize(() => {
           this.uploading.set(false);
+          this.uploadProgress.set(0);
+          this.uploadProgressLabel.set('');
           input.value = '';
         }),
       )
       .subscribe({
-        next: (response) => {
-          const uploadedFile = this.toDriveFile(response.file);
+        next: (event) => {
+          if (event.type === 'progress') {
+            this.uploadProgress.set(event.progress);
+            return;
+          }
+
+          const uploadedFile = this.toDriveFile(event.response.file);
 
           this.files.update((files) => [
             uploadedFile,
@@ -383,6 +454,7 @@ export class Dashboard implements OnDestroy {
           ]);
           this.loadImagePreviews([uploadedFile]);
           this.loadFilesError.set('');
+          this.uploadProgress.set(100);
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
         error: (error) => {
@@ -461,13 +533,17 @@ export class Dashboard implements OnDestroy {
   }
 
   private toDriveFile(file: UserFile): DriveFile {
+    const updatedAtTime = new Date(file.updatedAt).getTime();
+
     return {
       id: file.id,
       name: file.originalName,
       type: this.fileType(file),
       mimeType: file.mimeType,
       owner: 'คุณ',
+      sizeBytes: file.sizeBytes,
       size: this.formatFileSize(file.sizeBytes),
+      updatedAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
       updatedAt: this.formatUpdatedAt(file.updatedAt),
     };
   }
@@ -579,6 +655,32 @@ export class Dashboard implements OnDestroy {
     }
 
     return 'file';
+  }
+
+  private compareFiles(
+    firstFile: DriveFile,
+    secondFile: DriveFile,
+    field: FileSortField,
+  ): number {
+    if (field === 'name') {
+      return firstFile.name.localeCompare(secondFile.name, 'th', {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    }
+
+    if (field === 'type') {
+      return firstFile.mimeType.localeCompare(secondFile.mimeType, 'th', {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    }
+
+    if (field === 'size') {
+      return firstFile.sizeBytes - secondFile.sizeBytes;
+    }
+
+    return firstFile.updatedAtTime - secondFile.updatedAtTime;
   }
 
   private formatFileSize(sizeBytes: number): string {

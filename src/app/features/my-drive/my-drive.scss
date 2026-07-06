@@ -1,1 +1,10 @@
-
+.my-drive-grid-file-name {
+  display: -webkit-box;
+  min-height: 2.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

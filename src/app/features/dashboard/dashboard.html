@@ -73,8 +73,25 @@
         @if (uploadMessage()) {
         <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ uploadMessage() }}</p>
         }
+        @if (pageMessage()) {
+        <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ pageMessage() }}</p>
+        }
         @if (uploadError()) {
         <p class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ uploadError() }}</p>
+        }
+        @if (uploading()) {
+        <div class="rounded-xl border border-blue-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-2 flex items-center justify-between gap-3 text-sm font-extrabold text-slate-600 dark:text-slate-300">
+            <span class="truncate">{{ uploadProgressLabel() || 'กำลังอัปโหลดไฟล์' }}</span>
+            <span>{{ uploadProgress() }}%</span>
+          </div>
+          <div class="h-2 overflow-hidden rounded-full bg-blue-50 dark:bg-slate-800">
+            <div
+              class="h-full rounded-full bg-blue-600 transition-[width] duration-200 dark:bg-cyan-300"
+              [style.width.%]="uploadProgress()">
+            </div>
+          </div>
+        </div>
         }
         @if (downloadMessage()) {
         <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ downloadMessage() }}</p>
@@ -131,7 +148,13 @@
             <section class="overflow-visible rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
               <div class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 px-5 py-4 dark:border-slate-800">
                 <h2 class="m-0 text-lg font-black">ไฟล์ล่าสุด</h2>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <div class="flex flex-wrap items-center gap-1 rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+                    <button type="button" (click)="sortBy('name')" [class.bg-blue-50]="sortField() === 'name'" [class.text-blue-700]="sortField() === 'name'" [class.dark:bg-cyan-300/10]="sortField() === 'name'" [class.dark:text-cyan-300]="sortField() === 'name'" class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">ชื่อ {{ sortIndicator('name') }}</button>
+                    <button type="button" (click)="sortBy('type')" [class.bg-blue-50]="sortField() === 'type'" [class.text-blue-700]="sortField() === 'type'" [class.dark:bg-cyan-300/10]="sortField() === 'type'" [class.dark:text-cyan-300]="sortField() === 'type'" class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">ประเภท {{ sortIndicator('type') }}</button>
+                    <button type="button" (click)="sortBy('updated')" [class.bg-blue-50]="sortField() === 'updated'" [class.text-blue-700]="sortField() === 'updated'" [class.dark:bg-cyan-300/10]="sortField() === 'updated'" [class.dark:text-cyan-300]="sortField() === 'updated'" class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">อัปเดต {{ sortIndicator('updated') }}</button>
+                    <button type="button" (click)="sortBy('size')" [class.bg-blue-50]="sortField() === 'size'" [class.text-blue-700]="sortField() === 'size'" [class.dark:bg-cyan-300/10]="sortField() === 'size'" [class.dark:text-cyan-300]="sortField() === 'size'" class="min-h-8 rounded-md px-3 text-xs font-extrabold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300">ขนาด {{ sortIndicator('size') }}</button>
+                  </div>
                   <div class="flex rounded-lg border border-blue-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
                     <button
                       type="button"
@@ -173,7 +196,7 @@
 
               @if (!loadingFiles() && !loadFilesError() && files().length > 0 && fileViewMode() === 'grid') {
               <div class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
-                @for (file of files(); track file.id) {
+                @for (file of sortedFiles(); track file.id) {
                 <article class="group rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900">
                   <div class="relative grid aspect-4/3 place-items-center overflow-hidden border-b border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
                     @if (filePreviewUrl(file); as previewUrl) {
@@ -246,10 +269,22 @@
                 <table class="w-full min-w-170 border-collapse text-left">
                   <thead class="text-xs font-extrabold uppercase text-slate-400">
                     <tr>
-                      <th class="px-5 py-3">ชื่อ</th>
+                      <th class="px-5 py-3">
+                        <button type="button" (click)="sortBy('name')" class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300">
+                          ชื่อ <span class="min-w-3">{{ sortIndicator('name') }}</span>
+                        </button>
+                      </th>
                       <th class="px-5 py-3">เจ้าของ</th>
-                      <th class="px-5 py-3">แก้ไขล่าสุด</th>
-                      <th class="px-5 py-3">ขนาด</th>
+                      <th class="px-5 py-3">
+                        <button type="button" (click)="sortBy('updated')" class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300">
+                          แก้ไขล่าสุด <span class="min-w-3">{{ sortIndicator('updated') }}</span>
+                        </button>
+                      </th>
+                      <th class="px-5 py-3">
+                        <button type="button" (click)="sortBy('size')" class="inline-flex items-center gap-1 font-extrabold uppercase text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300">
+                          ขนาด <span class="min-w-3">{{ sortIndicator('size') }}</span>
+                        </button>
+                      </th>
                       <th class="px-5 py-3"></th>
                     </tr>
                   </thead>
@@ -291,7 +326,7 @@
                       <td colspan="5" class="px-5 py-10 text-center text-sm font-bold text-slate-500 dark:text-slate-400">ยังไม่มีไฟล์ อัปโหลดไฟล์แรกของคุณได้เลย</td>
                     </tr>
                     } @else {
-                    @for (file of files(); track file.id) {
+                    @for (file of sortedFiles(); track file.id) {
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                       <td class="px-5 py-4">
                         <div class="flex items-center gap-3">
@@ -361,6 +396,46 @@
       </div>
     </section>
   </div>
+
+  @if (deleteTarget()) {
+  <div class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="delete-file-title">
+    <section class="w-full max-w-md rounded-xl border border-rose-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-rose-300/20 dark:bg-slate-900">
+      <div class="mb-4 flex items-start gap-3">
+        <div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-300/10 dark:text-rose-300">
+          <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
+        </div>
+        <div class="min-w-0">
+          <h2 id="delete-file-title" class="m-0 text-xl font-black tracking-normal">ลบไฟล์นี้?</h2>
+          <p class="m-0 mt-2 text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+            ไฟล์ <span class="text-slate-900 dark:text-slate-100">{{ deleteTarget()?.name }}</span> จะถูกย้ายไปถังขยะ
+          </p>
+        </div>
+      </div>
+
+      @if (deleteError()) {
+      <p class="m-0 mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">{{ deleteError() }}</p>
+      }
+
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="cancelDeleteFile()"
+          [disabled]="deletingFileId() !== null"
+          class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800">
+          ยกเลิก
+        </button>
+        <button
+          type="button"
+          (click)="confirmDeleteFile()"
+          [disabled]="deletingFileId() !== null"
+          class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-rose-600 px-4 text-sm font-extrabold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
+          <svg lucideTrash2 aria-hidden="true" class="h-4 w-4" [class.animate-pulse]="deletingFileId() !== null"></svg>
+          {{ deletingFileId() !== null ? 'กำลังลบ...' : 'ลบไฟล์' }}
+        </button>
+      </div>
+    </section>
+  </div>
+  }
 
   @if (renameTarget()) {
   <div class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="rename-title">

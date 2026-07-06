@@ -1,16 +1,8 @@
-import {
-  afterNextRender,
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  ActivatedRoute,
-  Router,
-} from '@angular/router';
+import { afterNextRender, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   LucideChevronRight,
+  LucideCopy,
   LucideDownload,
   LucideFile,
   LucideFileImage,
@@ -18,30 +10,22 @@ import {
   LucideFolder,
   LucideFolderPlus,
   LucideGrid3X3,
+  LucideLink,
   LucideList,
   LucideMoreVertical,
   LucideMoveRight,
   LucidePencil,
   LucidePlus,
   LucideRefreshCw,
+  LucideShare2,
   LucideTrash2,
   LucideUpload,
   LucideX,
 } from '@lucide/angular';
-import {
-  finalize,
-  firstValueFrom,
-  forkJoin,
-} from 'rxjs';
+import { catchError, finalize, firstValueFrom, forkJoin, map, of } from 'rxjs';
 
-import {
-  FileService,
-  UserFile,
-} from '../../core/services/file.service';
-import {
-  FolderService,
-  UserFolder,
-} from '../../core/services/folder.service';
+import { FileService, ShareUserSuggestion, UserFile } from '../../core/services/file.service';
+import { FolderService, UserFolder } from '../../core/services/folder.service';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
 
 interface MyDriveFile {
@@ -50,7 +34,9 @@ interface MyDriveFile {
   name: string;
   type: 'document' | 'image' | 'archive' | 'file';
   mimeType: string;
+  sizeBytes: number;
   size: string;
+  updatedAtTime: number;
   updatedAt: string;
   previewUrl?: string;
 }
@@ -59,6 +45,7 @@ interface MyDriveFolder {
   id: number;
   parentId: number | null;
   name: string;
+  updatedAtTime: number;
   updatedAt: string;
 }
 
@@ -73,6 +60,9 @@ interface ActionMenuPosition {
 }
 
 type MyDriveViewMode = 'grid' | 'list';
+type MyDriveSortField = 'name' | 'type' | 'updated' | 'size';
+type SortDirection = 'asc' | 'desc';
+type ShareMode = 'user' | 'link';
 
 const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
 
@@ -81,6 +71,7 @@ const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
   imports: [
     AppSidebar,
     LucideChevronRight,
+    LucideCopy,
     LucideDownload,
     LucideFile,
     LucideFileImage,
@@ -88,12 +79,14 @@ const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
     LucideFolder,
     LucideFolderPlus,
     LucideGrid3X3,
+    LucideLink,
     LucideList,
     LucideMoreVertical,
     LucideMoveRight,
     LucidePencil,
     LucidePlus,
     LucideRefreshCw,
+    LucideShare2,
     LucideTrash2,
     LucideUpload,
     LucideX,
@@ -116,6 +109,8 @@ export class MyDrive {
   readonly loading = signal(false);
   readonly loadError = signal('');
   readonly uploading = signal(false);
+  readonly uploadProgress = signal(0);
+  readonly uploadProgressLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
   readonly creatingFolder = signal(false);
@@ -129,6 +124,14 @@ export class MyDrive {
   });
   readonly downloadingFileId = signal<number | null>(null);
   readonly deletingFileId = signal<number | null>(null);
+  readonly deleteTarget = signal<MyDriveFile | null>(null);
+  readonly selectedFileIds = signal<Set<number>>(new Set());
+  readonly bulkDeleteDialogOpen = signal(false);
+  readonly bulkDeleting = signal(false);
+  readonly bulkDeleteError = signal('');
+  readonly deletingFolderId = signal<number | null>(null);
+  readonly deleteFolderTarget = signal<MyDriveFolder | null>(null);
+  readonly deleteFolderError = signal('');
   readonly renamingFileId = signal<number | null>(null);
   readonly renameTarget = signal<MyDriveFile | null>(null);
   readonly renameName = signal('');
@@ -154,12 +157,59 @@ export class MyDrive {
   readonly actionMessage = signal('');
   readonly actionError = signal('');
   readonly moveMessage = signal('');
+  readonly sharingFileId = signal<number | null>(null);
+  readonly shareTarget = signal<MyDriveFile | null>(null);
+  readonly shareMode = signal<ShareMode>('user');
+  readonly shareEmail = signal('');
+  readonly shareUserSuggestions = signal<ShareUserSuggestion[]>([]);
+  readonly searchingShareUsers = signal(false);
+  readonly sharePermission = signal<'viewer' | 'editor'>('viewer');
+  readonly shareExpiresAt = signal('');
+  readonly shareLinkUrl = signal('');
+  readonly shareMessage = signal('');
+  readonly shareError = signal('');
+  readonly creatingShareLink = signal(false);
   readonly viewMode = signal<MyDriveViewMode>('list');
+  readonly sortField = signal<MyDriveSortField>('updated');
+  readonly sortDirection = signal<SortDirection>('desc');
   readonly openActionFileId = signal<number | null>(null);
   readonly openActionFolderId = signal<number | null>(null);
   readonly actionMenuPosition = signal<ActionMenuPosition>({
     top: 0,
     left: 0,
+  });
+  readonly selectedFiles = computed(() => {
+    const selectedIds = this.selectedFileIds();
+
+    return this.files().filter((file) => selectedIds.has(file.id));
+  });
+  readonly selectedFileCount = computed(() => this.selectedFileIds().size);
+  readonly allFilesSelected = computed(() => {
+    const files = this.files();
+
+    return files.length > 0 && files.every((file) => this.selectedFileIds().has(file.id));
+  });
+  readonly sortedFiles = computed(() => {
+    const field = this.sortField();
+    const direction = this.sortDirection();
+    const directionWeight = direction === 'asc' ? 1 : -1;
+
+    return [...this.files()].sort((firstFile, secondFile) => {
+      const result = this.compareFiles(firstFile, secondFile, field);
+
+      return result * directionWeight;
+    });
+  });
+  readonly sortedFolders = computed(() => {
+    const field = this.sortField();
+    const direction = this.sortDirection();
+    const directionWeight = direction === 'asc' ? 1 : -1;
+
+    return [...this.folders()].sort((firstFolder, secondFolder) => {
+      const result = this.compareFolders(firstFolder, secondFolder, field);
+
+      return result * directionWeight;
+    });
   });
 
   constructor() {
@@ -194,6 +244,7 @@ export class MyDrive {
           const nextFiles = files.map((file) => this.toMyDriveFile(file));
 
           this.files.set(nextFiles);
+          this.selectedFileIds.set(new Set());
           nextFiles
             .filter((file) => this.canPreviewSvg(file))
             .forEach((file) => this.loadSvgPreview(file));
@@ -291,14 +342,12 @@ export class MyDrive {
     this.uploadMessage.set('');
     this.uploadError.set('');
 
-    this.folderService.create(folderName, this.currentFolderId())
+    this.folderService
+      .create(folderName, this.currentFolderId())
       .pipe(finalize(() => this.creatingFolder.set(false)))
       .subscribe({
         next: (response) => {
-          this.folders.update((folders) => [
-            this.toMyDriveFolder(response.folder),
-            ...folders,
-          ]);
+          this.folders.update((folders) => [this.toMyDriveFolder(response.folder), ...folders]);
           this.uploadMessage.set('สร้างโฟลเดอร์สำเร็จ');
           this.createFolderDialogOpen.set(false);
           this.newFolderName.set('');
@@ -319,27 +368,35 @@ export class MyDrive {
     }
 
     this.uploading.set(true);
+    this.uploadProgress.set(0);
+    this.uploadProgressLabel.set(file.name);
     this.uploadMessage.set('');
     this.uploadError.set('');
 
-    this.fileService.upload(file, this.currentFolderId())
+    this.fileService
+      .uploadWithProgress(file, this.currentFolderId())
       .pipe(
         finalize(() => {
           this.uploading.set(false);
+          this.uploadProgress.set(0);
+          this.uploadProgressLabel.set('');
           input.value = '';
         }),
       )
       .subscribe({
-        next: (response) => {
-          const uploadedFile = this.toMyDriveFile(response.file);
+        next: (event) => {
+          if (event.type === 'progress') {
+            this.uploadProgress.set(event.progress);
+            return;
+          }
 
-          this.files.update((files) => [
-            uploadedFile,
-            ...files,
-          ]);
+          const uploadedFile = this.toMyDriveFile(event.response.file);
+
+          this.files.update((files) => [uploadedFile, ...files]);
           if (this.canPreviewSvg(uploadedFile)) {
             this.loadSvgPreview(uploadedFile);
           }
+          this.uploadProgress.set(100);
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
         error: () => {
@@ -358,33 +415,55 @@ export class MyDrive {
     }
 
     this.uploading.set(true);
+    this.uploadProgress.set(0);
+    this.uploadProgressLabel.set(`0/${files.length} ไฟล์`);
     this.uploadMessage.set('');
     this.uploadError.set('');
 
-    forkJoin(files.map((file) => this.fileService.upload(file, this.currentFolderId())))
-      .pipe(
-        finalize(() => {
-          this.uploading.set(false);
-          input.value = '';
-        }),
-      )
-      .subscribe({
-        next: (responses) => {
-          const uploadedFiles = responses.map((response) => this.toMyDriveFile(response.file));
+    const fileProgress = new Map<string, number>();
+    const uploadedFiles: MyDriveFile[] = [];
+    let finishedCount = 0;
+    let failedCount = 0;
 
-          this.files.update((currentFiles) => [
-            ...uploadedFiles,
-            ...currentFiles,
-          ]);
-          uploadedFiles
-            .filter((file) => this.canPreviewSvg(file))
-            .forEach((file) => this.loadSvgPreview(file));
-          this.uploadMessage.set(`อัปโหลด ${responses.length} ไฟล์สำเร็จ`);
+    files.forEach((file, index) => {
+      const progressKey = `${index}:${file.name}`;
+      fileProgress.set(progressKey, 0);
+
+      this.fileService.uploadWithProgress(file, this.currentFolderId()).subscribe({
+        next: (event) => {
+          if (event.type === 'progress') {
+            fileProgress.set(progressKey, event.progress);
+            this.updateFolderUploadProgress(fileProgress, files.length, finishedCount);
+            return;
+          }
+
+          fileProgress.set(progressKey, 100);
+          uploadedFiles.push(this.toMyDriveFile(event.response.file));
         },
         error: () => {
-          this.uploadError.set('ไม่สามารถอัปโหลดโฟลเดอร์ได้');
+          failedCount += 1;
+          finishedCount += 1;
+          fileProgress.set(progressKey, 100);
+          this.finishFolderUploadIfDone(
+            input,
+            files.length,
+            finishedCount,
+            failedCount,
+            uploadedFiles,
+          );
+        },
+        complete: () => {
+          finishedCount += 1;
+          this.finishFolderUploadIfDone(
+            input,
+            files.length,
+            finishedCount,
+            failedCount,
+            uploadedFiles,
+          );
         },
       });
+    });
   }
 
   downloadFile(file: MyDriveFile): void {
@@ -397,7 +476,8 @@ export class MyDrive {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService.download(file.id)
+    this.fileService
+      .download(file.id)
       .pipe(finalize(() => this.downloadingFileId.set(null)))
       .subscribe({
         next: (blob) => {
@@ -415,26 +495,229 @@ export class MyDrive {
       return;
     }
 
-    const confirmed = window.confirm(`ลบไฟล์ "${file.name}" ใช่ไหม?`);
+    this.closeActionMenu();
+    this.deleteTarget.set(file);
+    this.actionMessage.set('');
+    this.actionError.set('');
+  }
 
-    if (!confirmed) {
+  cancelDeleteFile(): void {
+    if (this.deletingFileId() !== null) {
       return;
     }
 
-    this.closeActionMenu();
+    this.deleteTarget.set(null);
+  }
+
+  confirmDeleteFile(): void {
+    const file = this.deleteTarget();
+
+    if (!file || this.deletingFileId() !== null) {
+      return;
+    }
+
     this.deletingFileId.set(file.id);
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService.delete(file.id)
+    this.fileService
+      .delete(file.id)
       .pipe(finalize(() => this.deletingFileId.set(null)))
       .subscribe({
         next: () => {
+          const previewUrl = this.previewObjectUrls.get(file.id);
+          if (previewUrl) {
+            window.URL.revokeObjectURL(previewUrl);
+            this.previewObjectUrls.delete(file.id);
+          }
+
           this.files.update((files) => files.filter((item) => item.id !== file.id));
           this.actionMessage.set('ลบไฟล์สำเร็จ');
+          this.deleteTarget.set(null);
         },
         error: () => {
           this.actionError.set('ไม่สามารถลบไฟล์ได้');
+        },
+      });
+  }
+
+  isFileSelected(fileId: number): boolean {
+    return this.selectedFileIds().has(fileId);
+  }
+
+  toggleFileSelection(file: MyDriveFile, event?: Event): void {
+    event?.stopPropagation();
+    this.closeActionMenu();
+
+    this.selectedFileIds.update((selectedIds) => {
+      const nextSelectedIds = new Set(selectedIds);
+
+      if (nextSelectedIds.has(file.id)) {
+        nextSelectedIds.delete(file.id);
+      } else {
+        nextSelectedIds.add(file.id);
+      }
+
+      return nextSelectedIds;
+    });
+  }
+
+  toggleSelectAllFiles(): void {
+    this.closeActionMenu();
+
+    if (this.allFilesSelected()) {
+      this.selectedFileIds.set(new Set());
+      return;
+    }
+
+    this.selectedFileIds.set(new Set(this.files().map((file) => file.id)));
+  }
+
+  clearFileSelection(): void {
+    if (this.bulkDeleting()) {
+      return;
+    }
+
+    this.selectedFileIds.set(new Set());
+    this.bulkDeleteError.set('');
+  }
+
+  openBulkDeleteDialog(): void {
+    if (this.selectedFileCount() === 0 || this.bulkDeleting()) {
+      return;
+    }
+
+    this.closeActionMenu();
+    this.bulkDeleteDialogOpen.set(true);
+    this.bulkDeleteError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+  }
+
+  cancelBulkDeleteFiles(): void {
+    if (this.bulkDeleting()) {
+      return;
+    }
+
+    this.bulkDeleteDialogOpen.set(false);
+    this.bulkDeleteError.set('');
+  }
+
+  confirmBulkDeleteFiles(): void {
+    const files = this.selectedFiles();
+
+    if (files.length === 0 || this.bulkDeleting()) {
+      return;
+    }
+
+    this.bulkDeleting.set(true);
+    this.bulkDeleteError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    forkJoin(
+      files.map((file) => {
+        return this.fileService.delete(file.id).pipe(
+          map(() => ({
+            file,
+            deleted: true,
+          })),
+          catchError(() =>
+            of({
+              file,
+              deleted: false,
+            }),
+          ),
+        );
+      }),
+    )
+      .pipe(finalize(() => this.bulkDeleting.set(false)))
+      .subscribe((results) => {
+        const deletedFileIds = new Set(
+          results.filter((result) => result.deleted).map((result) => result.file.id),
+        );
+        const failedFileIds = new Set(
+          results.filter((result) => !result.deleted).map((result) => result.file.id),
+        );
+
+        // Clean up object URLs for deleted SVG previews before removing them from the view.
+        deletedFileIds.forEach((fileId) => {
+          const previewUrl = this.previewObjectUrls.get(fileId);
+
+          if (previewUrl) {
+            window.URL.revokeObjectURL(previewUrl);
+            this.previewObjectUrls.delete(fileId);
+          }
+        });
+
+        this.files.update((currentFiles) =>
+          currentFiles.filter((file) => !deletedFileIds.has(file.id)),
+        );
+        this.selectedFileIds.set(failedFileIds);
+
+        if (deletedFileIds.size > 0) {
+          this.actionMessage.set(`ลบไฟล์ ${deletedFileIds.size} รายการสำเร็จ`);
+        }
+
+        if (failedFileIds.size > 0) {
+          this.bulkDeleteError.set(`มี ${failedFileIds.size} ไฟล์ที่ลบไม่สำเร็จ กรุณาลองอีกครั้ง`);
+          return;
+        }
+
+        this.bulkDeleteDialogOpen.set(false);
+      });
+  }
+
+  deleteFolder(folder: MyDriveFolder): void {
+    if (this.deletingFolderId() !== null) {
+      return;
+    }
+
+    this.closeActionMenu();
+    this.deleteFolderTarget.set(folder);
+    this.deleteFolderError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+  }
+
+  cancelDeleteFolder(): void {
+    if (this.deletingFolderId() !== null) {
+      return;
+    }
+
+    this.deleteFolderTarget.set(null);
+    this.deleteFolderError.set('');
+  }
+
+  confirmDeleteFolder(): void {
+    const folder = this.deleteFolderTarget();
+
+    if (!folder || this.deletingFolderId() !== null) {
+      return;
+    }
+
+    this.deletingFolderId.set(folder.id);
+    this.deleteFolderError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    this.folderService
+      .deleteFolder(folder.id)
+      .pipe(finalize(() => this.deletingFolderId.set(null)))
+      .subscribe({
+        next: () => {
+          // Remove only the deleted folder from the current view to avoid a full page reload flash.
+          this.folders.update((folders) => folders.filter((item) => item.id !== folder.id));
+          this.actionMessage.set('ลบโฟลเดอร์สำเร็จ');
+          this.deleteFolderTarget.set(null);
+        },
+        error: (error) => {
+          const message =
+            error.status === 409
+              ? 'ลบไม่ได้ เพราะโฟลเดอร์นี้ยังมีไฟล์หรือโฟลเดอร์ย่อยอยู่'
+              : 'ไม่สามารถลบโฟลเดอร์ได้';
+
+          this.deleteFolderError.set(message);
         },
       });
   }
@@ -483,18 +766,17 @@ export class MyDrive {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService.rename({
-      fileId: file.id,
-      originalName: nextName,
-    })
+    this.fileService
+      .rename({
+        fileId: file.id,
+        originalName: nextName,
+      })
       .pipe(finalize(() => this.renamingFileId.set(null)))
       .subscribe({
         next: (response) => {
           this.files.update((files) => {
             return files.map((item) => {
-              return item.id === file.id
-                ? { ...item, name: response.originalName }
-                : item;
+              return item.id === file.id ? { ...item, name: response.originalName } : item;
             });
           });
           this.actionMessage.set('เปลี่ยนชื่อไฟล์สำเร็จ');
@@ -552,26 +834,23 @@ export class MyDrive {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.folderService.rename({
-      folderId: folder.id,
-      folderName: nextName,
-    })
+    this.folderService
+      .rename({
+        folderId: folder.id,
+        folderName: nextName,
+      })
       .pipe(finalize(() => this.renamingFolderId.set(null)))
       .subscribe({
         next: (response) => {
           // Update only local folder labels so the page does not flash from a full reload.
           this.folders.update((folders) => {
             return folders.map((item) => {
-              return item.id === folder.id
-                ? { ...item, name: response.folderName }
-                : item;
+              return item.id === folder.id ? { ...item, name: response.folderName } : item;
             });
           });
           this.folderPath.update((items) => {
             return items.map((item) => {
-              return item.id === folder.id
-                ? { ...item, name: response.folderName }
-                : item;
+              return item.id === folder.id ? { ...item, name: response.folderName } : item;
             });
           });
           this.actionMessage.set('เปลี่ยนชื่อโฟลเดอร์สำเร็จ');
@@ -658,10 +937,11 @@ export class MyDrive {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.folderService.move({
-      folderId: folder.id,
-      parentId: destinationId,
-    })
+    this.folderService
+      .move({
+        folderId: folder.id,
+        parentId: destinationId,
+      })
       .pipe(finalize(() => this.movingFolderId.set(null)))
       .subscribe({
         next: (response) => {
@@ -670,9 +950,7 @@ export class MyDrive {
           } else {
             this.folders.update((folders) => {
               return folders.map((item) => {
-                return item.id === folder.id
-                  ? { ...item, parentId: response.parentId }
-                  : item;
+                return item.id === folder.id ? { ...item, parentId: response.parentId } : item;
               });
             });
           }
@@ -697,6 +975,178 @@ export class MyDrive {
     this.actionError.set('');
     this.moveMessage.set('');
     this.loadMoveFolders(this.currentFolderId());
+  }
+
+  openShareDialog(file: MyDriveFile): void {
+    this.closeActionMenu();
+    this.shareTarget.set(file);
+    this.shareMode.set('user');
+    this.shareEmail.set('');
+    this.shareUserSuggestions.set([]);
+    this.sharePermission.set('viewer');
+    this.shareExpiresAt.set('');
+    this.shareLinkUrl.set('');
+    this.shareMessage.set('');
+    this.shareError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+  }
+
+  cancelShare(): void {
+    if (this.sharingFileId() !== null || this.creatingShareLink()) {
+      return;
+    }
+
+    this.shareTarget.set(null);
+    this.shareMode.set('user');
+    this.shareEmail.set('');
+    this.shareUserSuggestions.set([]);
+    this.sharePermission.set('viewer');
+    this.shareExpiresAt.set('');
+    this.shareLinkUrl.set('');
+    this.shareMessage.set('');
+    this.shareError.set('');
+  }
+
+  setShareMode(mode: ShareMode): void {
+    if (this.sharingFileId() !== null || this.creatingShareLink()) {
+      return;
+    }
+
+    this.shareMode.set(mode);
+    this.shareError.set('');
+    this.shareMessage.set('');
+  }
+
+  onShareEmailInput(value: string): void {
+    this.shareEmail.set(value);
+    this.shareError.set('');
+
+    const keyword = value.trim();
+    if (keyword.length < 2) {
+      this.shareUserSuggestions.set([]);
+      return;
+    }
+
+    this.searchingShareUsers.set(true);
+    this.fileService
+      .searchShareUsers(keyword)
+      .pipe(finalize(() => this.searchingShareUsers.set(false)))
+      .subscribe({
+        next: (users) => {
+          if (this.shareEmail().trim() === keyword) {
+            this.shareUserSuggestions.set(users);
+          }
+        },
+        error: () => {
+          this.shareUserSuggestions.set([]);
+        },
+      });
+  }
+
+  selectShareUser(user: ShareUserSuggestion): void {
+    this.shareEmail.set(user.email);
+    this.shareUserSuggestions.set([]);
+    this.shareError.set('');
+  }
+
+  submitShare(event?: Event): void {
+    event?.preventDefault();
+
+    const file = this.shareTarget();
+    const email = this.shareEmail().trim().toLowerCase();
+    const expiresAt = this.shareExpiresAt();
+
+    if (!file || this.sharingFileId() !== null) {
+      return;
+    }
+
+    if (!email || !email.includes('@')) {
+      this.shareError.set('กรุณากรอกอีเมลให้ถูกต้อง');
+      return;
+    }
+
+    this.sharingFileId.set(file.id);
+    this.shareError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    this.fileService
+      .share({
+        fileId: file.id,
+        email,
+        permission: this.sharePermission(),
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      })
+      .pipe(finalize(() => this.sharingFileId.set(null)))
+      .subscribe({
+        next: () => {
+          this.actionMessage.set(`แชร์ "${file.name}" สำเร็จ`);
+          this.cancelShare();
+        },
+        error: (error) => {
+          this.shareError.set(
+            error.status === 400 ? 'ข้อมูลการแชร์ไม่ถูกต้อง' : 'ไม่สามารถแชร์ไฟล์ได้',
+          );
+        },
+      });
+  }
+
+  createPublicShareLink(event?: Event): void {
+    event?.preventDefault();
+
+    const file = this.shareTarget();
+    const expiresAt = this.shareExpiresAt();
+
+    if (!file || this.creatingShareLink()) {
+      return;
+    }
+
+    this.creatingShareLink.set(true);
+    this.shareError.set('');
+    this.shareMessage.set('');
+    this.shareLinkUrl.set('');
+
+    this.fileService
+      .createPublicLink({
+        fileId: file.id,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+      })
+      .pipe(finalize(() => this.creatingShareLink.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.shareLinkUrl.set(response.publicLink.url);
+          this.shareMessage.set('สร้างลิงก์เรียบร้อย ใครมีลิงก์นี้จะดาวน์โหลดไฟล์ได้');
+        },
+        error: (error) => {
+          this.shareError.set(
+            error.status === 400 ? 'ข้อมูลลิงก์แชร์ไม่ถูกต้อง' : 'ไม่สามารถสร้างลิงก์แชร์ได้',
+          );
+        },
+      });
+  }
+
+  copyShareLink(): void {
+    const linkUrl = this.shareLinkUrl();
+
+    if (!linkUrl) {
+      return;
+    }
+
+    if (!navigator?.clipboard) {
+      this.shareError.set('เบราว์เซอร์นี้ไม่รองรับการคัดลอกอัตโนมัติ');
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(linkUrl)
+      .then(() => {
+        this.shareMessage.set('คัดลอกลิงก์แล้ว');
+        this.shareError.set('');
+      })
+      .catch(() => {
+        this.shareError.set('ไม่สามารถคัดลอกลิงก์ได้');
+      });
   }
 
   cancelMove(): void {
@@ -758,10 +1208,11 @@ export class MyDrive {
     this.actionError.set('');
     this.moveMessage.set('');
 
-    this.fileService.move({
-      fileId: file.id,
-      folderId: destinationId,
-    })
+    this.fileService
+      .move({
+        fileId: file.id,
+        folderId: destinationId,
+      })
       .pipe(finalize(() => this.movingFileId.set(null)))
       .subscribe({
         next: (response) => {
@@ -770,9 +1221,7 @@ export class MyDrive {
           } else {
             this.files.update((files) => {
               return files.map((item) => {
-                return item.id === file.id
-                  ? { ...item, folderId: response.folderId }
-                  : item;
+                return item.id === file.id ? { ...item, folderId: response.folderId } : item;
               });
             });
           }
@@ -792,6 +1241,24 @@ export class MyDrive {
     this.closeNewMenu();
     this.viewMode.set(mode);
     localStorage.setItem(myDriveViewModeStorageKey, mode);
+  }
+
+  sortBy(field: MyDriveSortField): void {
+    if (this.sortField() === field) {
+      this.sortDirection.update((direction) => (direction === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    this.sortField.set(field);
+    this.sortDirection.set(field === 'updated' ? 'desc' : 'asc');
+  }
+
+  sortIndicator(field: MyDriveSortField): string {
+    if (this.sortField() !== field) {
+      return '';
+    }
+
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
   }
 
   toggleActionMenu(fileId: number, event: MouseEvent): void {
@@ -887,6 +1354,55 @@ export class MyDrive {
     return mimeType.includes('svg') || fileName.endsWith('.svg');
   }
 
+  private updateFolderUploadProgress(
+    fileProgress: Map<string, number>,
+    totalFiles: number,
+    finishedCount: number,
+  ): void {
+    const totalProgress = Array.from(fileProgress.values()).reduce(
+      (sum, progress) => sum + progress,
+      0,
+    );
+    const progress = totalFiles > 0 ? Math.round(totalProgress / totalFiles) : 0;
+
+    this.uploadProgress.set(Math.min(progress, 99));
+    this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์`);
+  }
+
+  private finishFolderUploadIfDone(
+    input: HTMLInputElement,
+    totalFiles: number,
+    finishedCount: number,
+    failedCount: number,
+    uploadedFiles: MyDriveFile[],
+  ): void {
+    this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์`);
+
+    if (finishedCount < totalFiles) {
+      return;
+    }
+
+    this.uploading.set(false);
+    this.uploadProgress.set(0);
+    this.uploadProgressLabel.set('');
+    input.value = '';
+
+    if (uploadedFiles.length > 0) {
+      this.files.update((currentFiles) => [...uploadedFiles, ...currentFiles]);
+      uploadedFiles
+        .filter((file) => this.canPreviewSvg(file))
+        .forEach((file) => this.loadSvgPreview(file));
+    }
+
+    if (failedCount > 0) {
+      this.uploadError.set(`อัปโหลดไม่สำเร็จ ${failedCount} ไฟล์`);
+    }
+
+    if (uploadedFiles.length > 0) {
+      this.uploadMessage.set(`อัปโหลด ${uploadedFiles.length} ไฟล์สำเร็จ`);
+    }
+  }
+
   private async loadFromRoute(folderIdParam: string | null): Promise<void> {
     this.closeActionMenu();
     this.closeNewMenu();
@@ -947,7 +1463,8 @@ export class MyDrive {
     this.moveFoldersLoading.set(true);
     this.moveError.set('');
 
-    this.folderService.list(parentId)
+    this.folderService
+      .list(parentId)
       .pipe(finalize(() => this.moveFoldersLoading.set(false)))
       .subscribe({
         next: (folders) => {
@@ -968,7 +1485,8 @@ export class MyDrive {
     this.moveFolderChoicesLoading.set(true);
     this.moveFolderError.set('');
 
-    this.folderService.list(parentId)
+    this.folderService
+      .list(parentId)
       .pipe(finalize(() => this.moveFolderChoicesLoading.set(false)))
       .subscribe({
         next: (folders) => {
@@ -992,30 +1510,24 @@ export class MyDrive {
       return;
     }
 
-    this.fileService.download(file.id)
-      .subscribe({
-        next: (blob) => {
-          // Uploaded SVG files can be detected by the backend as text/plain or octet-stream.
-          // Force the preview blob MIME so <img> can decode the SVG reliably.
-          const previewBlob = new Blob(
-            [blob],
-            { type: 'image/svg+xml' },
-          );
-          const previewUrl = window.URL.createObjectURL(previewBlob);
+    this.fileService.download(file.id).subscribe({
+      next: (blob) => {
+        // Uploaded SVG files can be detected by the backend as text/plain or octet-stream.
+        // Force the preview blob MIME so <img> can decode the SVG reliably.
+        const previewBlob = new Blob([blob], { type: 'image/svg+xml' });
+        const previewUrl = window.URL.createObjectURL(previewBlob);
 
-          this.previewObjectUrls.set(file.id, previewUrl);
-          this.files.update((files) => {
-            return files.map((item) => {
-              return item.id === file.id
-                ? { ...item, previewUrl }
-                : item;
-            });
+        this.previewObjectUrls.set(file.id, previewUrl);
+        this.files.update((files) => {
+          return files.map((item) => {
+            return item.id === file.id ? { ...item, previewUrl } : item;
           });
-        },
-        error: () => {
-          // Preview is optional; the normal file icon still works when download fails.
-        },
-      });
+        });
+      },
+      error: () => {
+        // Preview is optional; the normal file icon still works when download fails.
+      },
+    });
   }
 
   private clearSvgPreviewUrls(): void {
@@ -1024,22 +1536,29 @@ export class MyDrive {
   }
 
   private toMyDriveFolder(folder: UserFolder): MyDriveFolder {
+    const updatedAtTime = new Date(folder.updatedAt).getTime();
+
     return {
       id: folder.id,
       parentId: folder.parentId,
       name: folder.folderName,
+      updatedAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
       updatedAt: this.formatDate(folder.updatedAt),
     };
   }
 
   private toMyDriveFile(file: UserFile): MyDriveFile {
+    const updatedAtTime = new Date(file.updatedAt).getTime();
+
     return {
       id: file.id,
       folderId: file.folderId ?? null,
       name: file.originalName,
       type: this.fileType(file),
       mimeType: file.mimeType,
+      sizeBytes: file.sizeBytes,
       size: this.formatFileSize(file.sizeBytes),
+      updatedAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
       updatedAt: this.formatDate(file.updatedAt),
     };
   }
@@ -1052,11 +1571,7 @@ export class MyDrive {
       return 'image';
     }
 
-    if (
-      mimeType.includes('pdf') ||
-      mimeType.includes('document') ||
-      mimeType.startsWith('text/')
-    ) {
+    if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.startsWith('text/')) {
       return 'document';
     }
 
@@ -1069,6 +1584,47 @@ export class MyDrive {
     }
 
     return 'file';
+  }
+
+  private compareFiles(
+    firstFile: MyDriveFile,
+    secondFile: MyDriveFile,
+    field: MyDriveSortField,
+  ): number {
+    if (field === 'name') {
+      return firstFile.name.localeCompare(secondFile.name, 'th', {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    }
+
+    if (field === 'type') {
+      return firstFile.mimeType.localeCompare(secondFile.mimeType, 'th', {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    }
+
+    if (field === 'size') {
+      return firstFile.sizeBytes - secondFile.sizeBytes;
+    }
+
+    return firstFile.updatedAtTime - secondFile.updatedAtTime;
+  }
+
+  private compareFolders(
+    firstFolder: MyDriveFolder,
+    secondFolder: MyDriveFolder,
+    field: MyDriveSortField,
+  ): number {
+    if (field === 'updated') {
+      return firstFolder.updatedAtTime - secondFolder.updatedAtTime;
+    }
+
+    return firstFolder.name.localeCompare(secondFolder.name, 'th', {
+      numeric: true,
+      sensitivity: 'base',
+    });
   }
 
   private formatDate(value: string): string {

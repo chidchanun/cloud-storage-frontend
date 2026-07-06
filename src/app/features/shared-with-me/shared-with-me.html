@@ -1,0 +1,290 @@
+<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+  <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
+    <app-sidebar [showUpload]="false" />
+
+    <section class="grid content-start gap-6 px-6 py-6 max-sm:px-4">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <a
+            routerLink="/dashboard"
+            class="grid h-11 w-11 place-items-center rounded-lg border border-blue-100 bg-white text-slate-500 no-underline hover:text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-cyan-300"
+            aria-label="กลับหน้า dashboard"
+          >
+            <svg lucideArrowLeft aria-hidden="true" class="h-5 w-5"></svg>
+          </a>
+          <div>
+            <div
+              class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400"
+            >
+              ไฟล์ของฉัน
+              <span>/</span>
+              แชร์กับฉัน
+            </div>
+            <h1 class="m-0 flex items-center gap-3 text-3xl font-black tracking-normal">
+              <span
+                class="grid h-11 w-11 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+              >
+                <svg lucideShare2 aria-hidden="true" class="h-6 w-6"></svg>
+              </span>
+              แชร์กับฉัน
+            </h1>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="loadSharedFiles()"
+          [disabled]="loading()"
+          class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300"
+        >
+          <svg
+            lucideRefreshCw
+            aria-hidden="true"
+            class="h-5 w-5"
+            [class.animate-spin]="loading()"
+          ></svg>
+          รีเฟรช
+        </button>
+      </header>
+
+      <section
+        class="rounded-xl border border-blue-100 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="m-0 text-lg font-black">ไฟล์ที่คนอื่นแชร์มาให้</h2>
+            <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">
+              editor สามารถดาวน์โหลดและเปลี่ยนชื่อได้ ส่วน viewer ดูรายการได้อย่างเดียว
+            </p>
+          </div>
+
+          <div class="relative w-full max-w-sm">
+            <svg
+              lucideSearch
+              aria-hidden="true"
+              class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+            ></svg>
+            <input
+              type="search"
+              placeholder="ค้นหาไฟล์ที่แชร์"
+              [value]="searchTerm()"
+              (input)="searchTerm.set($any($event.target).value)"
+              class="min-h-11 w-full rounded-lg border border-blue-100 bg-slate-50 pl-12 pr-4 font-[inherit] outline-none focus:border-blue-600 focus:bg-white focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-cyan-300"
+            />
+          </div>
+        </div>
+      </section>
+
+      @if (loadError()) {
+        <p
+          class="m-0 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+        >
+          {{ loadError() }}
+        </p>
+      }
+
+      @if (actionMessage()) {
+        <p
+          class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200"
+        >
+          {{ actionMessage() }}
+        </p>
+      }
+
+      @if (actionError()) {
+        <p
+          class="m-0 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+        >
+          {{ actionError() }}
+        </p>
+      }
+
+      <section
+        class="overflow-hidden rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div
+          class="grid min-h-12 grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 border-b border-blue-100 px-5 text-xs font-black uppercase text-slate-400 dark:border-slate-800 max-md:hidden"
+        >
+          <span>ชื่อไฟล์</span>
+          <span>สิทธิ์</span>
+          <span>หมดอายุ</span>
+          <span class="text-right">Action</span>
+        </div>
+
+        @if (loading()) {
+          <div class="grid gap-3 p-5">
+            @for (item of [1, 2, 3, 4]; track item) {
+              <div class="h-14 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800"></div>
+            }
+          </div>
+        } @else if (filteredFiles().length > 0) {
+          <div class="divide-y divide-blue-50 dark:divide-slate-800">
+            @for (file of filteredFiles(); track file.id) {
+              <article
+                class="grid min-h-16 grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/70 max-md:grid-cols-1 max-md:gap-2"
+              >
+                <div class="flex min-w-0 items-center gap-3">
+                  <span
+                    class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+                  >
+                    @switch (file.type) {
+                      @case ('image') {
+                        <svg lucideFileImage aria-hidden="true" class="h-5 w-5"></svg>
+                      }
+                      @case ('document') {
+                        <svg lucideFileText aria-hidden="true" class="h-5 w-5"></svg>
+                      }
+                      @case ('archive') {
+                        <svg lucideFileArchive aria-hidden="true" class="h-5 w-5"></svg>
+                      }
+                      @default {
+                        <svg lucideFile aria-hidden="true" class="h-5 w-5"></svg>
+                      }
+                    }
+                  </span>
+                  <div class="min-w-0">
+                    <h3 class="m-0 truncate text-sm font-black" [title]="file.name">
+                      {{ file.name }}
+                    </h3>
+                    <p class="m-0 mt-1 text-xs font-bold text-slate-400">
+                      File ID: {{ file.fileId }}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  class="w-fit rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-300"
+                >
+                  {{ file.permission }}
+                </span>
+
+                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">{{
+                  file.expiresAt
+                }}</span>
+
+                <div class="flex justify-end gap-2 max-md:justify-start">
+                  @if (canEdit(file)) {
+                    <button
+                      type="button"
+                      (click)="downloadFile(file)"
+                      [disabled]="downloadingFileId() !== null || renamingFileId() !== null"
+                      class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      aria-label="ดาวน์โหลด"
+                    >
+                      <svg
+                        lucideDownload
+                        aria-hidden="true"
+                        class="h-4 w-4"
+                        [class.animate-bounce]="downloadingFileId() === file.fileId"
+                      ></svg>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="openRenameDialog(file)"
+                      [disabled]="downloadingFileId() !== null || renamingFileId() !== null"
+                      class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      aria-label="เปลี่ยนชื่อ"
+                    >
+                      <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
+                    </button>
+                  } @else {
+                    <span class="text-xs font-bold text-slate-400">viewer</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="grid min-h-72 place-items-center px-5 py-12 text-center">
+            <div>
+              <div
+                class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+              >
+                <svg lucideShare2 aria-hidden="true" class="h-7 w-7"></svg>
+              </div>
+              <h2 class="m-0 text-xl font-black">ยังไม่มีไฟล์ที่แชร์กับคุณ</h2>
+              <p class="m-0 mt-2 text-sm text-slate-500 dark:text-slate-400">
+                เมื่อมีคนแชร์ไฟล์ให้คุณ รายการจะแสดงที่หน้านี้
+              </p>
+            </div>
+          </div>
+        }
+      </section>
+    </section>
+  </div>
+
+  @if (renameTarget()) {
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shared-rename-title"
+    >
+      <form
+        (submit)="submitRename($event)"
+        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <h2 id="shared-rename-title" class="m-0 text-xl font-black tracking-normal">
+            เปลี่ยนชื่อไฟล์
+          </h2>
+          <button
+            type="button"
+            (click)="cancelRename()"
+            [disabled]="renamingFileId() !== null"
+            class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="ปิด"
+          >
+            <svg lucideX aria-hidden="true" class="h-5 w-5"></svg>
+          </button>
+        </div>
+
+        <label
+          for="sharedRenameName"
+          class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
+          >ชื่อไฟล์</label
+        >
+        <input
+          id="sharedRenameName"
+          type="text"
+          [value]="renameName()"
+          (input)="renameName.set($any($event.target).value)"
+          [disabled]="renamingFileId() !== null"
+          class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+        />
+
+        @if (renameError()) {
+          <p
+            class="m-0 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200"
+          >
+            {{ renameError() }}
+          </p>
+        }
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelRename()"
+            [disabled]="renamingFileId() !== null"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            [disabled]="renamingFileId() !== null"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            <svg
+              lucidePencil
+              aria-hidden="true"
+              class="h-4 w-4"
+              [class.animate-pulse]="renamingFileId() !== null"
+            ></svg>
+            {{ renamingFileId() !== null ? 'กำลังบันทึก...' : 'บันทึก' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</main>

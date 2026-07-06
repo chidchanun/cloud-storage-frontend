@@ -22,6 +22,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'shared-with-me',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'login',
     renderMode: RenderMode.Client,
   },
@@ -31,6 +35,6 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: '**',
-    renderMode: RenderMode.Prerender
-  }
+    renderMode: RenderMode.Prerender,
+  },
 ];

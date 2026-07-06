@@ -19,6 +19,7 @@ describe('Trash', () => {
           useValue: {
             trashList: () => of([]),
             restore: () => of({ message: 'restored', fileId: 1 }),
+            permanentDelete: () => of({ message: 'deleted', fileId: 1 }),
           },
         },
       ],

@@ -13,7 +13,7 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import {
   LucideEye,
@@ -27,8 +27,6 @@ import {
   LucideUserPlus,
   LucideX,
 } from '@lucide/angular';
-
-import { switchMap } from 'rxjs';
 
 import {
   AuthService,
@@ -72,12 +70,12 @@ export const passwordMatchValidator: ValidatorFn = (
 export class Register {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly showPassword = signal(false);
   readonly showConfirmPassword = signal(false);
   readonly loading = signal(false);
   readonly errorMessage = signal('');
+  readonly successMessage = signal('');
   readonly profilePicture = signal<File | null>(null);
   readonly profilePreviewUrl = signal<string | null>(null);
 
@@ -165,6 +163,7 @@ export class Register {
 
     this.loading.set(true);
     this.errorMessage.set('');
+    this.successMessage.set('');
 
     const {
       confirmPassword: _confirmPassword,
@@ -172,21 +171,12 @@ export class Register {
     } = this.registerForm.getRawValue();
 
     const payload: RegisterRequest = formValue;
-    const profilePicture = this.profilePicture();
-
-    const request$ = this.authService.register(payload).pipe(
-      switchMap((response) => {
-        if (!profilePicture) {
-          return [response];
-        }
-
-        return this.authService.uploadProfilePicture(profilePicture);
-      }),
-    );
-
-    request$.subscribe({
+    this.authService.register(payload).subscribe({
       next: () => {
-        this.router.navigateByUrl('/dashboard');
+        this.loading.set(false);
+        this.successMessage.set('Verify your email. We sent a confirmation link to your inbox.');
+        this.registerForm.reset();
+        this.clearProfilePicture();
       },
       error: (error) => {
         this.loading.set(false);
