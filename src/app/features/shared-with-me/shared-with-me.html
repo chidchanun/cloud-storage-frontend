@@ -2,7 +2,9 @@
   <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
     <app-sidebar [showUpload]="false" />
 
-    <section class="grid content-start gap-6 px-6 py-6 max-sm:px-4">
+    <section class="min-w-0">
+      <app-header searchPlaceholder="ค้นหาไฟล์ที่แชร์" />
+      <div class="grid content-start gap-6 px-6 py-6 max-lg:pb-28 max-sm:px-4">
       <header class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <a
@@ -105,7 +107,7 @@
         <div
           class="grid min-h-12 grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 border-b border-blue-100 px-5 text-xs font-black uppercase text-slate-400 dark:border-slate-800 max-md:hidden"
         >
-          <span>ชื่อไฟล์</span>
+          <span>ชื่อ</span>
           <span>สิทธิ์</span>
           <span>หมดอายุ</span>
           <span class="text-right">Action</span>
@@ -117,8 +119,48 @@
               <div class="h-14 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800"></div>
             }
           </div>
-        } @else if (filteredFiles().length > 0) {
+        } @else if (filteredFolders().length > 0 || filteredFiles().length > 0) {
           <div class="divide-y divide-blue-50 dark:divide-slate-800">
+            @for (folder of filteredFolders(); track folder.id) {
+              <article
+                role="button"
+                tabindex="0"
+                (click)="openFolder(folder)"
+                (keydown.enter)="openFolder(folder)"
+                (keydown.space)="openFolder(folder)"
+                class="grid min-h-16 cursor-pointer grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/70 max-md:grid-cols-1 max-md:gap-2"
+              >
+                <div class="flex min-w-0 items-center gap-3">
+                  <span
+                    class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+                  >
+                    <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
+                  </span>
+                  <div class="min-w-0">
+                    <h3 class="m-0 truncate text-sm font-black" [title]="folder.name">
+                      {{ folder.name }}
+                    </h3>
+                    <p class="m-0 mt-1 text-xs font-bold text-slate-400">
+                      Folder ID: {{ folder.folderId }}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  class="w-fit rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-300"
+                >
+                  {{ folder.permission }}
+                </span>
+
+                <span class="text-sm font-bold text-slate-500 dark:text-slate-400">{{
+                  folder.expiresAt
+                }}</span>
+
+                <div class="flex justify-end gap-2 max-md:justify-start">
+                  <span class="text-xs font-bold text-slate-400">เปิดโฟลเดอร์</span>
+                </div>
+              </article>
+            }
             @for (file of filteredFiles(); track file.id) {
               <article
                 class="grid min-h-16 grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/70 max-md:grid-cols-1 max-md:gap-2"
@@ -210,6 +252,7 @@
           </div>
         }
       </section>
+      </div>
     </section>
   </div>
 

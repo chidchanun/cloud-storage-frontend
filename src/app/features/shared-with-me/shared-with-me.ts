@@ -1,5 +1,5 @@
 import { afterNextRender, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
   LucideDownload,
@@ -7,16 +7,19 @@ import {
   LucideFileArchive,
   LucideFileImage,
   LucideFileText,
+  LucideFolder,
   LucidePencil,
   LucideRefreshCw,
   LucideSearch,
   LucideShare2,
   LucideX,
 } from '@lucide/angular';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 import { FileService, SharedWithMeFile } from '../../core/services/file.service';
+import { FolderService, SharedWithMeFolder } from '../../core/services/folder.service';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
+import { AppHeader } from '../../shared/components/app-header/app-header';
 
 interface SharedFileItem {
   id: number;
@@ -28,17 +31,28 @@ interface SharedFileItem {
   expiresAtTime: number | null;
 }
 
+interface SharedFolderItem {
+  id: number;
+  folderId: number;
+  name: string;
+  permission: string;
+  expiresAt: string;
+  expiresAtTime: number | null;
+}
+
 @Component({
   selector: 'app-shared-with-me',
   imports: [
     RouterLink,
     AppSidebar,
+    AppHeader,
     LucideArrowLeft,
     LucideDownload,
     LucideFile,
     LucideFileArchive,
     LucideFileImage,
     LucideFileText,
+    LucideFolder,
     LucidePencil,
     LucideRefreshCw,
     LucideSearch,
@@ -49,9 +63,12 @@ interface SharedFileItem {
   styleUrl: './shared-with-me.scss',
 })
 export class SharedWithMe {
+  private readonly router = inject(Router);
   private readonly fileService = inject(FileService);
+  private readonly folderService = inject(FolderService);
 
   readonly loading = signal(false);
+  readonly folders = signal<SharedFolderItem[]>([]);
   readonly files = signal<SharedFileItem[]>([]);
   readonly downloadingFileId = signal<number | null>(null);
   readonly renameTarget = signal<SharedFileItem | null>(null);
@@ -62,6 +79,20 @@ export class SharedWithMe {
   readonly actionError = signal('');
   readonly renameError = signal('');
   readonly searchTerm = signal('');
+  readonly filteredFolders = computed(() => {
+    const keyword = this.searchTerm().trim().toLowerCase();
+
+    if (!keyword) {
+      return this.folders();
+    }
+
+    return this.folders().filter((folder) => {
+      return (
+        folder.name.toLowerCase().includes(keyword) ||
+        folder.permission.toLowerCase().includes(keyword)
+      );
+    });
+  });
   readonly filteredFiles = computed(() => {
     const keyword = this.searchTerm().trim().toLowerCase();
 
@@ -93,11 +124,14 @@ export class SharedWithMe {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService
-      .sharedWithMe()
+    forkJoin({
+      files: this.fileService.sharedWithMe(),
+      folders: this.folderService.sharedWithMe(),
+    })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (files) => {
+        next: ({ files, folders }) => {
+          this.folders.set(folders.map((folder) => this.toSharedFolderItem(folder)));
           this.files.set(files.map((file) => this.toSharedFileItem(file)));
         },
         error: () => {
@@ -108,6 +142,10 @@ export class SharedWithMe {
 
   canEdit(file: SharedFileItem): boolean {
     return file.permission === 'editor';
+  }
+
+  openFolder(folder: SharedFolderItem): void {
+    void this.router.navigate(['/my-drive/folders', folder.folderId]);
   }
 
   downloadFile(file: SharedFileItem): void {
@@ -211,6 +249,19 @@ export class SharedWithMe {
       type: this.fileType(file.fileName),
       permission: file.permission.toLowerCase(),
       expiresAt: file.expiresAt ? this.formatDate(file.expiresAt) : 'ไม่มีวันหมดอายุ',
+      expiresAtTime: expiresAtTime !== null && !Number.isNaN(expiresAtTime) ? expiresAtTime : null,
+    };
+  }
+
+  private toSharedFolderItem(folder: SharedWithMeFolder): SharedFolderItem {
+    const expiresAtTime = folder.expiresAt ? new Date(folder.expiresAt).getTime() : null;
+
+    return {
+      id: folder.id,
+      folderId: folder.folderId,
+      name: folder.folderName,
+      permission: folder.permission.toLowerCase(),
+      expiresAt: folder.expiresAt ? this.formatDate(folder.expiresAt) : 'ไม่มีวันหมดอายุ',
       expiresAtTime: expiresAtTime !== null && !Number.isNaN(expiresAtTime) ? expiresAtTime : null,
     };
   }

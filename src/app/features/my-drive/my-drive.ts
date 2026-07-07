@@ -1,6 +1,15 @@
-import { afterNextRender, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  HostListener,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  LucideChevronDown,
   LucideChevronRight,
   LucideCopy,
   LucideDownload,
@@ -22,11 +31,27 @@ import {
   LucideUpload,
   LucideX,
 } from '@lucide/angular';
-import { catchError, finalize, firstValueFrom, forkJoin, map, of } from 'rxjs';
+import { catchError, finalize, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 
-import { FileService, ShareUserSuggestion, UserFile } from '../../core/services/file.service';
-import { FolderService, UserFolder } from '../../core/services/folder.service';
+import {
+  FileService,
+  RemoveSharedFilePermissionResponse,
+  SharedFilePermission,
+  ShareFileResponse,
+  ShareUserSuggestion,
+  UpdateSharedFilePermissionResponse,
+  UserFile,
+} from '../../core/services/file.service';
+import {
+  FolderService,
+  RemoveSharedFolderPermissionResponse,
+  SharedFolderPermission,
+  ShareFolderResponse,
+  UpdateSharedFolderPermissionResponse,
+  UserFolder,
+} from '../../core/services/folder.service';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
+import { AppHeader } from '../../shared/components/app-header/app-header';
 
 interface MyDriveFile {
   id: number;
@@ -63,6 +88,23 @@ type MyDriveViewMode = 'grid' | 'list';
 type MyDriveSortField = 'name' | 'type' | 'updated' | 'size';
 type SortDirection = 'asc' | 'desc';
 type ShareMode = 'user' | 'link';
+type ShareTarget =
+  | {
+      kind: 'file';
+      item: MyDriveFile;
+    }
+  | {
+      kind: 'folder';
+      item: MyDriveFolder;
+    };
+type DriveSharePermission = SharedFilePermission | SharedFolderPermission;
+type DriveShareResponse = ShareFileResponse | ShareFolderResponse;
+type DriveUpdateSharePermissionResponse =
+  | UpdateSharedFilePermissionResponse
+  | UpdateSharedFolderPermissionResponse;
+type DriveRemoveSharePermissionResponse =
+  | RemoveSharedFilePermissionResponse
+  | RemoveSharedFolderPermissionResponse;
 
 const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
 
@@ -70,6 +112,8 @@ const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
   selector: 'app-my-drive',
   imports: [
     AppSidebar,
+    AppHeader,
+    LucideChevronDown,
     LucideChevronRight,
     LucideCopy,
     LucideDownload,
@@ -158,7 +202,7 @@ export class MyDrive {
   readonly actionError = signal('');
   readonly moveMessage = signal('');
   readonly sharingFileId = signal<number | null>(null);
-  readonly shareTarget = signal<MyDriveFile | null>(null);
+  readonly shareTarget = signal<ShareTarget | null>(null);
   readonly shareMode = signal<ShareMode>('user');
   readonly shareEmail = signal('');
   readonly shareUserSuggestions = signal<ShareUserSuggestion[]>([]);
@@ -169,7 +213,12 @@ export class MyDrive {
   readonly shareMessage = signal('');
   readonly shareError = signal('');
   readonly creatingShareLink = signal(false);
+  readonly sharePermissions = signal<DriveSharePermission[]>([]);
+  readonly loadingSharePermissions = signal(false);
+  readonly updatingSharePermissionId = signal<number | null>(null);
+  readonly removingSharePermissionId = signal<number | null>(null);
   readonly viewMode = signal<MyDriveViewMode>('list');
+  readonly isMobileView = signal(false);
   readonly sortField = signal<MyDriveSortField>('updated');
   readonly sortDirection = signal<SortDirection>('desc');
   readonly openActionFileId = signal<number | null>(null);
@@ -178,6 +227,7 @@ export class MyDrive {
     top: 0,
     left: 0,
   });
+  readonly highlightedFileId = signal<number | null>(null);
   readonly selectedFiles = computed(() => {
     const selectedIds = this.selectedFileIds();
 
@@ -215,17 +265,28 @@ export class MyDrive {
   constructor() {
     // Keep API fetching on the client so the server-rendered shell stays quick.
     afterNextRender(() => {
+      this.syncMobileViewMode();
       this.restoreViewMode();
       this.route.paramMap.subscribe((params) => {
         window.setTimeout(() => {
           void this.loadFromRoute(params.get('id'));
         }, 0);
       });
+      this.route.queryParamMap.subscribe((params) => {
+        const fileId = Number(params.get('fileId'));
+        this.highlightedFileId.set(Number.isInteger(fileId) && fileId > 0 ? fileId : null);
+        this.revealHighlightedFile();
+      });
     });
 
     this.destroyRef.onDestroy(() => {
       this.clearSvgPreviewUrls();
     });
+  }
+
+  @HostListener('document:click')
+  closeContextMenusOnLeftClick(): void {
+    this.closeDriveMenus();
   }
 
   loadFiles(): void {
@@ -248,6 +309,7 @@ export class MyDrive {
           nextFiles
             .filter((file) => this.canPreviewSvg(file))
             .forEach((file) => this.loadSvgPreview(file));
+          this.revealHighlightedFile();
         },
         error: () => {
           this.loadError.set('ไม่สามารถโหลดไฟล์ของคุณได้');
@@ -290,6 +352,8 @@ export class MyDrive {
   }
 
   toggleNewMenu(event: MouseEvent): void {
+    event.stopPropagation();
+
     const button = event.currentTarget as HTMLElement;
     const buttonRect = button.getBoundingClientRect();
     const menuGap = 8;
@@ -304,6 +368,11 @@ export class MyDrive {
 
   closeNewMenu(): void {
     this.newMenuOpen.set(false);
+  }
+
+  closeDriveMenus(): void {
+    this.closeActionMenu();
+    this.closeNewMenu();
   }
 
   openCreateFolderDialog(): void {
@@ -979,7 +1048,7 @@ export class MyDrive {
 
   openShareDialog(file: MyDriveFile): void {
     this.closeActionMenu();
-    this.shareTarget.set(file);
+    this.shareTarget.set({ kind: 'file', item: file });
     this.shareMode.set('user');
     this.shareEmail.set('');
     this.shareUserSuggestions.set([]);
@@ -988,6 +1057,25 @@ export class MyDrive {
     this.shareLinkUrl.set('');
     this.shareMessage.set('');
     this.shareError.set('');
+    this.sharePermissions.set([]);
+    this.loadSharePermissions();
+    this.actionMessage.set('');
+    this.actionError.set('');
+  }
+
+  openShareFolderDialog(folder: MyDriveFolder): void {
+    this.closeActionMenu();
+    this.shareTarget.set({ kind: 'folder', item: folder });
+    this.shareMode.set('user');
+    this.shareEmail.set('');
+    this.shareUserSuggestions.set([]);
+    this.sharePermission.set('viewer');
+    this.shareExpiresAt.set('');
+    this.shareLinkUrl.set('');
+    this.shareMessage.set('');
+    this.shareError.set('');
+    this.sharePermissions.set([]);
+    this.loadSharePermissions();
     this.actionMessage.set('');
     this.actionError.set('');
   }
@@ -1006,6 +1094,10 @@ export class MyDrive {
     this.shareLinkUrl.set('');
     this.shareMessage.set('');
     this.shareError.set('');
+    this.sharePermissions.set([]);
+    this.loadingSharePermissions.set(false);
+    this.updatingSharePermissionId.set(null);
+    this.removingSharePermissionId.set(null);
   }
 
   setShareMode(mode: ShareMode): void {
@@ -1050,14 +1142,129 @@ export class MyDrive {
     this.shareError.set('');
   }
 
+  loadSharePermissions(): void {
+    const target = this.shareTarget();
+
+    if (!target) {
+      return;
+    }
+
+    this.loadingSharePermissions.set(true);
+    this.shareError.set('');
+
+    const request: Observable<DriveSharePermission[]> =
+      target.kind === 'file'
+        ? this.fileService.listSharePermissions(target.item.id)
+        : this.folderService.listSharePermissions(target.item.id);
+
+    request
+      .pipe(finalize(() => this.loadingSharePermissions.set(false)))
+      .subscribe({
+        next: (permissions) => {
+          this.sharePermissions.set(permissions);
+        },
+        error: () => {
+          this.sharePermissions.set([]);
+          this.shareError.set('ไม่สามารถโหลดรายการสิทธิ์ของไฟล์นี้ได้');
+        },
+      });
+  }
+
+  updateSharePermission(
+    permission: DriveSharePermission,
+    nextPermission: 'viewer' | 'editor',
+  ): void {
+    const target = this.shareTarget();
+
+    if (!target || this.updatingSharePermissionId() !== null) {
+      return;
+    }
+
+    this.updatingSharePermissionId.set(permission.id);
+    this.shareError.set('');
+    this.shareMessage.set('');
+
+    const request: Observable<DriveUpdateSharePermissionResponse> =
+      target.kind === 'file'
+        ? this.fileService.updateSharePermission({
+            fileId: target.item.id,
+            email: permission.email,
+            permission: nextPermission,
+            expiresAt: permission.expiresAt ?? null,
+          })
+        : this.folderService.updateSharePermission({
+            folderId: target.item.id,
+            email: permission.email,
+            permission: nextPermission,
+            expiresAt: permission.expiresAt ?? null,
+          });
+
+    request
+      .pipe(finalize(() => this.updatingSharePermissionId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.shareMessage.set(response.message || 'อัปเดตสิทธิ์เรียบร้อย');
+          this.sharePermissions.update((permissions) =>
+            permissions.map((item) =>
+              item.id === permission.id ? { ...item, permission: nextPermission } : item,
+            ),
+          );
+        },
+        error: () => {
+          this.shareError.set('ไม่สามารถอัปเดตสิทธิ์ได้');
+        },
+      });
+  }
+
+  removeSharePermission(permission: DriveSharePermission): void {
+    const target = this.shareTarget();
+
+    if (this.removingSharePermissionId() !== null || this.updatingSharePermissionId() !== null) {
+      return;
+    }
+
+    if (!target) {
+      return;
+    }
+
+    this.removingSharePermissionId.set(permission.id);
+    this.shareError.set('');
+    this.shareMessage.set('');
+
+    const request: Observable<DriveRemoveSharePermissionResponse> =
+      target.kind === 'file'
+        ? this.fileService.removeSharePermission({
+            sharedFileId: permission.id,
+            email: permission.email,
+          })
+        : this.folderService.removeSharePermission({
+            sharedFolderId: permission.id,
+            email: permission.email,
+          });
+
+    request
+      .pipe(finalize(() => this.removingSharePermissionId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.shareMessage.set(response.message || 'ลบสิทธิ์ผู้ใช้เรียบร้อย');
+          this.sharePermissions.update((permissions) =>
+            permissions.filter((item) => item.id !== permission.id),
+          );
+        },
+        error: () => {
+          this.shareError.set('ไม่สามารถลบสิทธิ์ผู้ใช้นี้ได้');
+        },
+      });
+  }
+
   submitShare(event?: Event): void {
     event?.preventDefault();
 
-    const file = this.shareTarget();
+    const target = this.shareTarget();
     const email = this.shareEmail().trim().toLowerCase();
     const expiresAt = this.shareExpiresAt();
 
-    if (!file || this.sharingFileId() !== null) {
+    if (!target || this.sharingFileId() !== null) {
       return;
     }
 
@@ -1066,23 +1273,34 @@ export class MyDrive {
       return;
     }
 
-    this.sharingFileId.set(file.id);
+    this.sharingFileId.set(target.item.id);
     this.shareError.set('');
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService
-      .share({
-        fileId: file.id,
-        email,
-        permission: this.sharePermission(),
-        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-      })
+    const request: Observable<DriveShareResponse> =
+      target.kind === 'file'
+        ? this.fileService.share({
+            fileId: target.item.id,
+            email,
+            permission: this.sharePermission(),
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+          })
+        : this.folderService.share({
+            folderId: target.item.id,
+            email,
+            permission: this.sharePermission(),
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+          });
+
+    request
       .pipe(finalize(() => this.sharingFileId.set(null)))
       .subscribe({
         next: () => {
-          this.actionMessage.set(`แชร์ "${file.name}" สำเร็จ`);
-          this.cancelShare();
+          this.actionMessage.set(`แชร์ "${target.item.name}" สำเร็จ`);
+          this.shareEmail.set('');
+          this.shareUserSuggestions.set([]);
+          this.loadSharePermissions();
         },
         error: (error) => {
           this.shareError.set(
@@ -1095,10 +1313,10 @@ export class MyDrive {
   createPublicShareLink(event?: Event): void {
     event?.preventDefault();
 
-    const file = this.shareTarget();
+    const target = this.shareTarget();
     const expiresAt = this.shareExpiresAt();
 
-    if (!file || this.creatingShareLink()) {
+    if (!target || target.kind !== 'file' || this.creatingShareLink()) {
       return;
     }
 
@@ -1109,7 +1327,7 @@ export class MyDrive {
 
     this.fileService
       .createPublicLink({
-        fileId: file.id,
+        fileId: target.item.id,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
       })
       .pipe(finalize(() => this.creatingShareLink.set(false)))
@@ -1243,6 +1461,10 @@ export class MyDrive {
     localStorage.setItem(myDriveViewModeStorageKey, mode);
   }
 
+  effectiveViewMode(): MyDriveViewMode {
+    return this.isMobileView() ? 'grid' : this.viewMode();
+  }
+
   sortBy(field: MyDriveSortField): void {
     if (this.sortField() === field) {
       this.sortDirection.update((direction) => (direction === 'asc' ? 'desc' : 'asc'));
@@ -1262,6 +1484,8 @@ export class MyDrive {
   }
 
   toggleActionMenu(fileId: number, event: MouseEvent): void {
+    event.stopPropagation();
+
     const button = event.currentTarget as HTMLElement;
     const buttonRect = button.getBoundingClientRect();
     const menuWidth = 176;
@@ -1278,6 +1502,80 @@ export class MyDrive {
     this.openActionFileId.update((currentFileId) => {
       return currentFileId === fileId ? null : fileId;
     });
+  }
+
+  openFileContextMenu(fileId: number, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const menuWidth = 176;
+    const menuHeight = 216;
+    const viewportPadding = 12;
+
+    // Right-click should feel like a desktop drive: open actions at the pointer.
+    this.closeNewMenu();
+    this.openActionFolderId.set(null);
+    this.actionMenuPosition.set({
+      top: Math.max(
+        viewportPadding,
+        Math.min(event.clientY, window.innerHeight - menuHeight - viewportPadding),
+      ),
+      left: Math.max(
+        viewportPadding,
+        Math.min(event.clientX, window.innerWidth - menuWidth - viewportPadding),
+      ),
+    });
+    this.openActionFileId.set(fileId);
+  }
+
+  openFolderContextMenu(folderId: number, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const menuWidth = 176;
+    const menuHeight = 176;
+    const viewportPadding = 12;
+
+    this.closeNewMenu();
+    this.openActionFileId.set(null);
+    this.actionMenuPosition.set({
+      top: Math.max(
+        viewportPadding,
+        Math.min(event.clientY, window.innerHeight - menuHeight - viewportPadding),
+      ),
+      left: Math.max(
+        viewportPadding,
+        Math.min(event.clientX, window.innerWidth - menuWidth - viewportPadding),
+      ),
+    });
+    this.openActionFolderId.set(folderId);
+  }
+
+  openBlankContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+
+    const target = event.target as HTMLElement;
+
+    if (target.closest('[data-drive-item], [data-drive-menu], button, a, input, label, select')) {
+      return;
+    }
+
+    const menuWidth = 224;
+    const menuHeight = 144;
+    const viewportPadding = 12;
+
+    this.closeActionMenu();
+    this.newMenuPosition.set({
+      top: Math.max(
+        viewportPadding,
+        Math.min(event.clientY, window.innerHeight - menuHeight - viewportPadding),
+      ),
+      left: Math.max(
+        viewportPadding,
+        Math.min(event.clientX, window.innerWidth - menuWidth - viewportPadding),
+      ),
+    });
+    this.newMenuOpen.set(true);
   }
 
   toggleFolderActionMenu(folderId: number, event: MouseEvent): void {
@@ -1457,6 +1755,27 @@ export class MyDrive {
     }
 
     return pathItems;
+  }
+
+  private revealHighlightedFile(): void {
+    const fileId = this.highlightedFileId();
+
+    if (!fileId) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      const target = document.getElementById(`my-drive-file-${fileId}`);
+
+      if (!target) {
+        return;
+      }
+
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 100);
   }
 
   private loadMoveFolders(parentId: number | null): void {
@@ -1676,5 +1995,18 @@ export class MyDrive {
     if (savedMode === 'grid' || savedMode === 'list') {
       this.viewMode.set(savedMode);
     }
+  }
+
+  private syncMobileViewMode(): void {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const updateMobileView = (matches: boolean) => {
+      this.isMobileView.set(matches);
+      this.closeActionMenu();
+    };
+    const onMediaQueryChange = (event: MediaQueryListEvent) => updateMobileView(event.matches);
+
+    updateMobileView(mediaQuery.matches);
+    mediaQuery.addEventListener('change', onMediaQueryChange);
+    this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', onMediaQueryChange));
   }
 }

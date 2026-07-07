@@ -46,6 +46,71 @@ interface ApiDeleteFolderResponse {
   folder_id: number;
 }
 
+interface ApiListSharedFoldersResponse {
+  message: string;
+  folders: ApiSharedWithMeFolder[];
+  total: number;
+}
+
+interface ApiShareFolderResponse {
+  message: string;
+  shared_folder: ApiSharedFolder;
+}
+
+interface ApiListSharedFolderPermissionsResponse {
+  message: string;
+  permissions: ApiSharedFolderPermission[];
+  total: number;
+}
+
+interface ApiUpdateSharedFolderPermissionResponse {
+  message: string;
+  shared_folder: {
+    folder_id: number;
+    shared_by_user_id: number;
+    shared_with_user_id: number;
+    permission: string;
+    expires_at?: string | null;
+  };
+}
+
+interface ApiRemoveSharedFolderPermissionResponse {
+  message: string;
+}
+
+interface ApiSharedFolder {
+  id: number;
+  folder_id: number;
+  shared_by_user_id: number;
+  shared_with_user_id: number;
+  permission: string;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiSharedWithMeFolder {
+  id: number;
+  folder_id: number;
+  folder_name: string;
+  permission: string;
+  expires_at?: string | null;
+}
+
+interface ApiSharedFolderPermission {
+  id: number;
+  folder_id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  picture_path?: string | null;
+  permission: string;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserFolder {
   id: number;
   parentId: number | null;
@@ -84,6 +149,74 @@ export interface MoveFolderResponse {
 export interface DeleteFolderResponse {
   message: string;
   folderId: number;
+}
+
+export interface SharedWithMeFolder {
+  id: number;
+  folderId: number;
+  folderName: string;
+  permission: string;
+  expiresAt?: string | null;
+}
+
+export interface ShareFolderRequest {
+  folderId: number;
+  email: string;
+  permission: 'viewer' | 'editor';
+  expiresAt?: string | null;
+}
+
+export interface SharedFolder {
+  id: number;
+  folderId: number;
+  sharedByUserId: number;
+  sharedWithUserId: number;
+  permission: string;
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShareFolderResponse {
+  message: string;
+  sharedFolder: SharedFolder;
+}
+
+export interface SharedFolderPermission {
+  id: number;
+  folderId: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  picturePath?: string | null;
+  permission: 'viewer' | 'editor';
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSharedFolderPermissionRequest {
+  folderId: number;
+  email: string;
+  permission: 'viewer' | 'editor';
+  expiresAt?: string | null;
+}
+
+export interface UpdateSharedFolderPermissionResponse {
+  message: string;
+  folderId: number;
+  permission: string;
+  expiresAt?: string | null;
+}
+
+export interface RemoveSharedFolderPermissionRequest {
+  sharedFolderId: number;
+  email: string;
+}
+
+export interface RemoveSharedFolderPermissionResponse {
+  message: string;
 }
 
 @Injectable({
@@ -194,6 +327,140 @@ export class FolderService {
           folderId: response.folder_id,
         })),
       );
+  }
+
+  sharedWithMe(): Observable<SharedWithMeFolder[]> {
+    return this.http
+      .get<ApiListSharedFoldersResponse>(`${this.apiUrl}/share-folder`, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) =>
+          response.folders.map((folder) => this.normalizeSharedWithMeFolder(folder)),
+        ),
+      );
+  }
+
+  share(data: ShareFolderRequest): Observable<ShareFolderResponse> {
+    return this.http
+      .post<ApiShareFolderResponse>(
+        `${this.apiUrl}/share-folder`,
+        {
+          folder_id: data.folderId,
+          email: data.email,
+          permission: data.permission,
+          expires_at: data.expiresAt || null,
+        },
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
+          sharedFolder: this.normalizeSharedFolder(response.shared_folder),
+        })),
+      );
+  }
+
+  listSharePermissions(folderId: number): Observable<SharedFolderPermission[]> {
+    const params = new HttpParams().set('folder_id', folderId);
+
+    return this.http
+      .get<ApiListSharedFolderPermissionsResponse>(`${this.apiUrl}/share-folder/permissions`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) =>
+          response.permissions.map((permission) =>
+            this.normalizeSharedFolderPermission(permission),
+          ),
+        ),
+      );
+  }
+
+  updateSharePermission(
+    data: UpdateSharedFolderPermissionRequest,
+  ): Observable<UpdateSharedFolderPermissionResponse> {
+    return this.http
+      .patch<ApiUpdateSharedFolderPermissionResponse>(
+        `${this.apiUrl}/share-folder/permissions`,
+        {
+          folder_id: data.folderId,
+          email: data.email,
+          permission: data.permission,
+          expires_at: data.expiresAt || null,
+        },
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
+          folderId: response.shared_folder.folder_id,
+          permission: response.shared_folder.permission,
+          expiresAt: response.shared_folder.expires_at ?? null,
+        })),
+      );
+  }
+
+  removeSharePermission(
+    data: RemoveSharedFolderPermissionRequest,
+  ): Observable<RemoveSharedFolderPermissionResponse> {
+    return this.http
+      .delete<ApiRemoveSharedFolderPermissionResponse>(
+        `${this.apiUrl}/share-folder/permissions/${data.sharedFolderId}`,
+        {
+          body: {
+            email: data.email,
+          },
+          withCredentials: true,
+        },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
+        })),
+      );
+  }
+
+  private normalizeSharedFolder(sharedFolder: ApiSharedFolder): SharedFolder {
+    return {
+      id: sharedFolder.id,
+      folderId: sharedFolder.folder_id,
+      sharedByUserId: sharedFolder.shared_by_user_id,
+      sharedWithUserId: sharedFolder.shared_with_user_id,
+      permission: sharedFolder.permission,
+      expiresAt: sharedFolder.expires_at ?? null,
+      createdAt: sharedFolder.created_at,
+      updatedAt: sharedFolder.updated_at,
+    };
+  }
+
+  private normalizeSharedFolderPermission(
+    permission: ApiSharedFolderPermission,
+  ): SharedFolderPermission {
+    return {
+      id: permission.id,
+      folderId: permission.folder_id,
+      userId: permission.user_id,
+      firstName: permission.first_name,
+      lastName: permission.last_name,
+      email: permission.email,
+      picturePath: permission.picture_path ?? null,
+      permission: permission.permission === 'editor' ? 'editor' : 'viewer',
+      expiresAt: permission.expires_at ?? null,
+      createdAt: permission.created_at,
+      updatedAt: permission.updated_at,
+    };
+  }
+
+  private normalizeSharedWithMeFolder(folder: ApiSharedWithMeFolder): SharedWithMeFolder {
+    return {
+      id: folder.id,
+      folderId: folder.folder_id,
+      folderName: folder.folder_name,
+      permission: folder.permission,
+      expiresAt: folder.expires_at ?? null,
+    };
   }
 
   private normalizeFolder(folder: ApiUserFolder): UserFolder {

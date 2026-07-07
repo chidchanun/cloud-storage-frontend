@@ -2,6 +2,7 @@ import {
   afterNextRender,
   Component,
   computed,
+  HostListener,
   inject,
   OnDestroy,
   signal,
@@ -42,6 +43,7 @@ import {
 } from '../../core/services/file.service';
 import { environment } from '../../../environments/environment';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
+import { AppHeader } from '../../shared/components/app-header/app-header';
 
 interface DriveFolder {
   name: string;
@@ -78,6 +80,7 @@ const fileViewModeStorageKey = 'anucloud:file-view-mode';
   imports: [
     RouterLink,
     AppSidebar,
+    AppHeader,
     LucideBell,
     LucideChevronRight,
     LucideFile,
@@ -108,6 +111,8 @@ export class Dashboard implements OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly previewObjectUrls = new Map<number, string>();
+  private mobileMediaQuery: MediaQueryList | null = null;
+  private mobileMediaQueryListener: ((event: MediaQueryListEvent) => void) | null = null;
 
   readonly currentUser = this.authService.currentUser;
   readonly loadingFiles = signal(false);
@@ -138,6 +143,7 @@ export class Dashboard implements OnDestroy {
   readonly moveMessage = signal('');
   readonly loggingOut = signal(false);
   readonly fileViewMode = signal<FileViewMode>('list');
+  readonly isMobileView = signal(false);
   readonly sortField = signal<FileSortField>('updated');
   readonly sortDirection = signal<SortDirection>('desc');
   readonly filePreviewUrls = signal<Record<number, string>>({});
@@ -184,6 +190,7 @@ export class Dashboard implements OnDestroy {
 
     // Defer the first file fetch so SSR can render the page shell quickly.
     afterNextRender(() => {
+      this.syncMobileViewMode();
       this.restoreFileViewMode();
       window.setTimeout(() => this.loadFiles(), 0);
     });
@@ -215,6 +222,12 @@ export class Dashboard implements OnDestroy {
 
   ngOnDestroy(): void {
     this.revokeFilePreviews();
+    this.removeMobileViewModeListener();
+  }
+
+  @HostListener('document:click')
+  closeContextMenusOnLeftClick(): void {
+    this.closeActionMenu();
   }
 
   profileImageUrl(): string | null {
@@ -367,6 +380,8 @@ export class Dashboard implements OnDestroy {
   }
 
   toggleActionMenu(fileId: number, event: MouseEvent): void {
+    event.stopPropagation();
+
     const button = event.currentTarget as HTMLElement;
     const buttonRect = button.getBoundingClientRect();
     const menuWidth = 176;
@@ -383,6 +398,27 @@ export class Dashboard implements OnDestroy {
     });
   }
 
+  openFileContextMenu(fileId: number, event: MouseEvent): void {
+    event.preventDefault();
+
+    const menuWidth = 176;
+    const menuHeight = 176;
+    const viewportPadding = 12;
+
+    // Right-click uses the pointer position, while keeping the fixed menu inside the viewport.
+    this.actionMenuPosition.set({
+      top: Math.max(
+        viewportPadding,
+        Math.min(event.clientY, window.innerHeight - menuHeight - viewportPadding),
+      ),
+      left: Math.max(
+        viewportPadding,
+        Math.min(event.clientX, window.innerWidth - menuWidth - viewportPadding),
+      ),
+    });
+    this.openActionFileId.set(fileId);
+  }
+
   closeActionMenu(): void {
     this.openActionFileId.set(null);
   }
@@ -391,6 +427,10 @@ export class Dashboard implements OnDestroy {
     this.closeActionMenu();
     this.fileViewMode.set(mode);
     localStorage.setItem(fileViewModeStorageKey, mode);
+  }
+
+  effectiveFileViewMode(): FileViewMode {
+    return this.isMobileView() ? 'grid' : this.fileViewMode();
   }
 
   sortBy(field: FileSortField): void {
@@ -615,6 +655,26 @@ export class Dashboard implements OnDestroy {
     if (savedMode === 'grid' || savedMode === 'list') {
       this.fileViewMode.set(savedMode);
     }
+  }
+
+  private syncMobileViewMode(): void {
+    this.mobileMediaQuery = window.matchMedia('(max-width: 767px)');
+    this.isMobileView.set(this.mobileMediaQuery.matches);
+    this.mobileMediaQueryListener = (event) => {
+      this.isMobileView.set(event.matches);
+      this.closeActionMenu();
+    };
+    this.mobileMediaQuery.addEventListener('change', this.mobileMediaQueryListener);
+  }
+
+  private removeMobileViewModeListener(): void {
+    if (!this.mobileMediaQuery || !this.mobileMediaQueryListener) {
+      return;
+    }
+
+    this.mobileMediaQuery.removeEventListener('change', this.mobileMediaQueryListener);
+    this.mobileMediaQuery = null;
+    this.mobileMediaQueryListener = null;
   }
 
   private formatUpdatedAt(updatedAt: string): string {

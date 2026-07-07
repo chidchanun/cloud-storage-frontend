@@ -23,7 +23,7 @@ interface ApiUser {
     email: string;
     email_verified: boolean;
     picture_path: string | null;
-    phone: string;
+    phone: string | null;
 }
 
 interface ApiAuthResponse {
@@ -60,6 +60,17 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+    message: string;
+    user: User;
+}
+
+export interface UpdateProfileRequest {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+}
+
+export interface UpdateProfileResponse {
     message: string;
     user: User;
 }
@@ -125,6 +136,26 @@ export class AuthService {
             .post<ApiAuthResponse>(
                 `${this.baseApiUrl}/me/profile-picture`,
                 formData,
+                { withCredentials: true },
+            )
+            .pipe(
+                map((response) => this.normalizeAuthResponse(response)),
+                tap((response) => {
+                    this.currentUser.set(response.user);
+                    this.authChecked.set(true);
+                }),
+            );
+    }
+
+    updateProfile(data: UpdateProfileRequest): Observable<UpdateProfileResponse> {
+        return this.http
+            .patch<ApiAuthResponse>(
+                `${this.baseApiUrl}/profile`,
+                {
+                    first_name: data.firstName,
+                    last_name: data.lastName,
+                    phone: data.phoneNumber,
+                },
                 { withCredentials: true },
             )
             .pipe(
@@ -205,7 +236,7 @@ export class AuthService {
             email: user.email,
             emailVerified: user.email_verified,
             picturePath: user.picture_path,
-            phoneNumber: user.phone,
+            phoneNumber: user.phone ?? '',
         };
     }
 }

@@ -26,6 +26,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/my-drive/my-drive').then((module) => module.MyDrive),
   },
   {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/profile/update-profile/update-profile').then(
+        (module) => module.UpdateProfile,
+      ),
+  },
+  {
     path: 'trash',
     canActivate: [authGuard],
     loadComponent: () => import('./features/trash/trash').then((module) => module.Trash),

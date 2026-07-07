@@ -1,18 +1,18 @@
 <main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-[#111827] dark:text-slate-50">
   <header class="sticky top-0 z-20 border-b border-blue-100 bg-white/88 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/82">
-    <div class="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-6 max-sm:px-4">
-      <a routerLink="/" class="inline-flex items-center gap-3 no-underline" aria-label="AnuCloud">
-        <img src="/assets/AnuCloud-128.png" width="44" height="44" alt="AnuCloud logo" class="h-11 w-11 rounded-lg object-cover" decoding="async" fetchpriority="high" />
-        <span class="bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-2xl font-black tracking-normal text-transparent">
+    <div class="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-6 max-sm:flex-wrap max-sm:gap-3 max-sm:px-4 max-sm:py-3">
+      <a routerLink="/" class="inline-flex min-w-0 items-center gap-3 no-underline" aria-label="AnuCloud">
+        <img src="/assets/AnuCloud-128.png" width="44" height="44" alt="AnuCloud logo" class="h-11 w-11 shrink-0 rounded-lg object-cover max-sm:h-10 max-sm:w-10" decoding="async" fetchpriority="high" />
+        <span class="truncate bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-2xl font-black tracking-normal text-transparent max-sm:text-xl">
           AnuCloud
         </span>
       </a>
 
-      <nav class="flex items-center gap-2">
-        <a routerLink="/login" class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-700 no-underline hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800">
+      <nav class="flex shrink-0 items-center gap-2 max-sm:grid max-sm:w-full max-sm:grid-cols-2">
+        <a routerLink="/login" class="inline-flex min-h-10 items-center justify-center rounded-lg px-4 text-sm font-extrabold text-slate-700 no-underline hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 max-sm:px-3 max-sm:text-xs">
           เข้าสู่ระบบ
         </a>
-        <a routerLink="/register" class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white no-underline shadow-[0_12px_24px_rgba(37,99,235,0.22)] hover:bg-violet-700 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-blue-300">
+        <a routerLink="/register" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white no-underline shadow-[0_12px_24px_rgba(37,99,235,0.22)] hover:bg-violet-700 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-blue-300 max-sm:px-3 max-sm:text-xs">
           เริ่มใช้ฟรี
         </a>
       </nav>
@@ -35,12 +35,12 @@
           พื้นที่จัดเก็บไฟล์ส่วนตัวและไฟล์งานที่ใช้ง่าย ปลอดภัย และพร้อมให้คุณเปิดเอกสาร รูปภาพ และโปรเจกต์สำคัญได้จากทุกที่
         </p>
 
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a routerLink="/register" class="inline-flex min-h-12 items-center gap-2 rounded-lg bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 px-5 text-sm font-black text-white no-underline shadow-[0_16px_34px_rgba(37,99,235,0.28)] hover:shadow-[0_20px_42px_rgba(37,99,235,0.34)]">
+        <div class="mt-8 flex flex-wrap gap-3 max-sm:grid max-sm:grid-cols-1">
+          <a routerLink="/register" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-linear-to-r from-violet-700 via-blue-600 to-sky-500 px-5 text-sm font-black text-white no-underline shadow-[0_16px_34px_rgba(37,99,235,0.28)] hover:shadow-[0_20px_42px_rgba(37,99,235,0.34)] max-sm:w-full">
             สมัครใช้งานฟรี
             <svg lucideChevronRight aria-hidden="true" class="h-5 w-5"></svg>
           </a>
-          <a routerLink="/login" class="inline-flex min-h-12 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 text-sm font-black text-slate-700 no-underline hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-cyan-300">
+          <a routerLink="/login" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-white px-5 text-sm font-black text-slate-700 no-underline hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:text-cyan-300 max-sm:w-full">
             ไปที่ไดรฟ์ของฉัน
           </a>
         </div>

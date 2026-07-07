@@ -1,0 +1,459 @@
+<main class="min-h-dvh bg-[#F8FAFC] text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <div class="grid min-h-dvh lg:grid-cols-[280px_minmax(0,1fr)]">
+    <app-sidebar [showUpload]="false" />
+
+    <section class="min-w-0">
+      <header
+        class="sticky top-0 z-20 border-b border-blue-100/80 bg-white/90 px-4 py-3 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85 sm:px-6 lg:px-8"
+      >
+        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <a
+            routerLink="/dashboard"
+            class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-300"
+          >
+            <svg lucideArrowLeft class="size-4" aria-hidden="true"></svg>
+            กลับหน้าแดชบอร์ด
+          </a>
+
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="hidden min-w-0 text-right sm:block">
+              <p class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {{ currentUser()?.firstName }} {{ currentUser()?.lastName }}
+              </p>
+              <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                {{ currentUser()?.email }}
+              </p>
+            </div>
+
+            <div
+              class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-blue-600 via-violet-600 to-cyan-500 text-sm font-bold text-white shadow-lg shadow-blue-500/20"
+            >
+              @if (profileImageUrl(); as imageUrl) {
+                <img
+                  [src]="imageUrl"
+                  [alt]="'รูปโปรไฟล์ของ ' + (currentUser()?.firstName || 'ผู้ใช้')"
+                  class="size-full object-cover"
+                />
+              } @else {
+                {{ initials() }}
+              }
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="mx-auto max-w-6xl px-4 py-8 max-lg:pb-28 sm:px-6 lg:px-8 lg:py-10">
+        <div class="mb-8">
+          <div
+            class="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-900/70 dark:bg-blue-950/50 dark:text-cyan-300"
+          >
+            <svg lucideUser class="size-3.5" aria-hidden="true"></svg>
+            บัญชีของฉัน
+          </div>
+          <h1 class="text-3xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+            แก้ไขโปรไฟล์
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400 sm:text-base">
+            จัดการข้อมูลส่วนตัว รูปโปรไฟล์ และข้อมูลสำหรับติดต่อของคุณ
+          </p>
+        </div>
+
+        @if (successMessage()) {
+          <div
+            class="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200"
+            role="status"
+          >
+            <svg lucideCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true"></svg>
+            <span>{{ successMessage() }}</span>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div
+            class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-200"
+            role="alert"
+          >
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <div class="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside
+            class="h-fit rounded-3xl border border-blue-100 bg-white p-6 shadow-sm shadow-blue-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none"
+          >
+            <div class="text-center">
+              <div class="relative mx-auto size-32">
+                <div
+                  class="flex size-32 items-center justify-center overflow-hidden rounded-4xl bg-linear-to-br from-blue-600 via-violet-600 to-cyan-500 text-3xl font-bold text-white shadow-xl shadow-blue-500/20 ring-4 ring-blue-50 dark:ring-slate-800"
+                >
+                  @if (profileImageUrl(); as imageUrl) {
+                    <img
+                      [src]="imageUrl"
+                      [alt]="'รูปโปรไฟล์ของ ' + (currentUser()?.firstName || 'ผู้ใช้')"
+                      class="size-full object-cover"
+                    />
+                  } @else {
+                    {{ initials() }}
+                  }
+                </div>
+
+                <label
+                  for="profilePicture"
+                  class="absolute -bottom-2 -right-2 flex size-11 cursor-pointer items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:border-slate-900 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 dark:focus-within:ring-offset-slate-900"
+                  [class.pointer-events-none]="uploadingPicture()"
+                  [class.opacity-60]="uploadingPicture()"
+                  title="เปลี่ยนรูปโปรไฟล์"
+                >
+                  @if (uploadingPicture()) {
+                    <svg lucideLoaderCircle class="size-5 animate-spin" aria-hidden="true"></svg>
+                  } @else {
+                    <svg lucideCamera class="size-5" aria-hidden="true"></svg>
+                  }
+                  <span class="sr-only">เปลี่ยนรูปโปรไฟล์</span>
+                </label>
+
+                <input
+                  id="profilePicture"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  class="sr-only"
+                  [disabled]="uploadingPicture()"
+                  (change)="selectProfilePicture($event)"
+                />
+              </div>
+
+              <h2 class="mt-6 text-xl font-bold text-slate-900 dark:text-white">
+                {{ currentUser()?.firstName }} {{ currentUser()?.lastName }}
+              </h2>
+              <p class="mt-1 break-all text-sm text-slate-500 dark:text-slate-400">
+                {{ currentUser()?.email }}
+              </p>
+            </div>
+
+            <div class="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
+              <div
+                class="flex items-start gap-3 rounded-2xl bg-blue-50 p-4 dark:bg-slate-950/70"
+              >
+                <div
+                  class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-cyan-300"
+                >
+                  <svg lucideShieldCheck class="size-4" aria-hidden="true"></svg>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    สถานะอีเมล
+                  </p>
+                  @if (currentUser()?.emailVerified) {
+                    <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-300">
+                      ยืนยันแล้ว
+                    </p>
+                  } @else {
+                    <p class="mt-1 text-xs text-amber-600 dark:text-amber-300">
+                      ยังไม่ได้ยืนยัน
+                    </p>
+                  }
+                </div>
+              </div>
+
+              <p class="mt-4 text-xs leading-5 text-slate-400 dark:text-slate-500">
+                รองรับ JPG, PNG, GIF และ WebP ขนาดไม่เกิน 5 MB
+              </p>
+
+              @if (pictureMessage()) {
+                <p class="mt-3 text-sm text-emerald-600 dark:text-emerald-300" role="status">
+                  {{ pictureMessage() }}
+                </p>
+              }
+
+              @if (pictureError()) {
+                <p class="mt-3 text-sm text-rose-600 dark:text-rose-300" role="alert">
+                  {{ pictureError() }}
+                </p>
+              }
+            </div>
+          </aside>
+
+          <section
+            class="rounded-3xl border border-blue-100 bg-white shadow-sm shadow-blue-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none"
+          >
+            <div class="border-b border-slate-100 px-6 py-5 dark:border-slate-800 sm:px-8">
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">ข้อมูลส่วนตัว</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                ข้อมูลนี้จะแสดงในบัญชี Cloud Storage ของคุณ
+              </p>
+            </div>
+
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+              <div class="space-y-6 p-6 sm:p-8">
+                <div class="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label
+                      for="firstName"
+                      class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                    >
+                      ชื่อ <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <svg
+                        lucideUser
+                        class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      ></svg>
+                      <input
+                        id="firstName"
+                        type="text"
+                        formControlName="firstName"
+                        autocomplete="given-name"
+                        class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10"
+                        [class.border-rose-400]="isInvalid('firstName')"
+                        placeholder="กรอกชื่อ"
+                      />
+                    </div>
+                    @if (isInvalid('firstName')) {
+                      <p class="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                        {{ fieldError('firstName') }}
+                      </p>
+                    }
+                  </div>
+
+                  <div>
+                    <label
+                      for="lastName"
+                      class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                    >
+                      นามสกุล <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <svg
+                        lucideUser
+                        class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      ></svg>
+                      <input
+                        id="lastName"
+                        type="text"
+                        formControlName="lastName"
+                        autocomplete="family-name"
+                        class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10"
+                        [class.border-rose-400]="isInvalid('lastName')"
+                        placeholder="กรอกนามสกุล"
+                      />
+                    </div>
+                    @if (isInvalid('lastName')) {
+                      <p class="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                        {{ fieldError('lastName') }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    for="email"
+                    class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                  >
+                    อีเมล
+                  </label>
+                  <div class="relative">
+                    <svg
+                      lucideMail
+                      class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                      aria-hidden="true"
+                    ></svg>
+                    <input
+                      id="email"
+                      type="email"
+                      [value]="currentUser()?.email || ''"
+                      autocomplete="email"
+                      readonly
+                      class="w-full cursor-not-allowed rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-400"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                    อีเมลไม่สามารถแก้ไขได้จากหน้านี้
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    for="phoneNumber"
+                    class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                  >
+                    เบอร์โทรศัพท์ <span class="text-rose-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <svg
+                      lucidePhone
+                      class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                      aria-hidden="true"
+                    ></svg>
+                    <input
+                      id="phoneNumber"
+                      type="tel"
+                      formControlName="phoneNumber"
+                      autocomplete="tel"
+                      class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10"
+                      [class.border-rose-400]="isInvalid('phoneNumber')"
+                      placeholder="เช่น 0812345678"
+                    />
+                  </div>
+                  @if (isInvalid('phoneNumber')) {
+                    <p class="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                      {{ fieldError('phoneNumber') }}
+                    </p>
+                  }
+                </div>
+              </div>
+
+              <div
+                class="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/40 sm:flex-row sm:justify-end sm:px-8"
+              >
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                  [disabled]="saving() || profileForm.pristine"
+                  (click)="resetForm()"
+                >
+                  <svg lucideRotateCcw class="size-4" aria-hidden="true"></svg>
+                  คืนค่าเดิม
+                </button>
+
+                <button
+                  type="submit"
+                  class="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-600 via-violet-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:from-blue-500 dark:via-violet-500 dark:to-cyan-400 dark:text-slate-950 dark:focus-visible:ring-offset-slate-900"
+                  [disabled]="saving() || profileForm.invalid || profileForm.pristine"
+                >
+                  @if (saving()) {
+                    <svg lucideLoaderCircle class="size-4 animate-spin" aria-hidden="true"></svg>
+                    กำลังบันทึก...
+                  } @else {
+                    <svg lucideSave class="size-4" aria-hidden="true"></svg>
+                    บันทึกการเปลี่ยนแปลง
+                  }
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  @if (cropImageUrl(); as cropUrl) {
+    <div
+      class="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-crop-title"
+    >
+      <section
+        class="w-full max-w-lg overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-2xl shadow-slate-950/20 dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+          <div>
+            <h2 id="profile-crop-title" class="text-lg font-black text-slate-950 dark:text-white">
+              เลือกส่วนของรูปโปรไฟล์
+            </h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              ปรับตำแหน่งและซูมก่อนอัปโหลด
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="grid size-10 place-items-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            (click)="cancelCrop()"
+            aria-label="ปิดหน้าครอปรูป"
+          >
+            <svg lucideX class="size-5" aria-hidden="true"></svg>
+          </button>
+        </div>
+
+        <div class="space-y-5 p-5">
+          <div class="mx-auto grid size-72 max-w-full place-items-center rounded-4xl bg-slate-950 p-4 max-sm:size-64">
+            <div class="relative size-60 max-w-full overflow-hidden rounded-full border-4 border-white/90 bg-slate-900 shadow-inner dark:border-cyan-300/80 max-sm:size-52">
+              <img
+                [src]="cropUrl"
+                alt="ตัวอย่างรูปที่กำลังครอป"
+                class="size-full object-cover transition-transform duration-150"
+                [style.object-position]="cropX() + '% ' + cropY() + '%'"
+                [style.transform]="'scale(' + cropZoom() + ')'"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <label class="block">
+              <span class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
+                เลื่อนซ้าย-ขวา
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="cropX()"
+                (input)="updateCropX($event)"
+                class="w-full accent-blue-600 dark:accent-cyan-300"
+              />
+            </label>
+
+            <label class="block">
+              <span class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
+                เลื่อนขึ้น-ลง
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="cropY()"
+                (input)="updateCropY($event)"
+                class="w-full accent-blue-600 dark:accent-cyan-300"
+              />
+            </label>
+
+            <label class="block">
+              <span class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                <svg lucideZoomIn class="size-4" aria-hidden="true"></svg>
+                ซูม
+              </span>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                [value]="cropZoom()"
+                (input)="updateCropZoom($event)"
+                class="w-full accent-blue-600 dark:accent-cyan-300"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div class="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            (click)="cancelCrop()"
+          >
+            ยกเลิก
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-600 via-violet-600 to-cyan-500 px-5 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:text-slate-950"
+            [disabled]="uploadingPicture()"
+            (click)="applyProfileCrop()"
+          >
+            @if (uploadingPicture()) {
+              <svg lucideLoaderCircle class="size-4 animate-spin" aria-hidden="true"></svg>
+              กำลังอัปโหลด...
+            } @else {
+              <svg lucideCheck class="size-4" aria-hidden="true"></svg>
+              ใช้รูปนี้
+            }
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</main>

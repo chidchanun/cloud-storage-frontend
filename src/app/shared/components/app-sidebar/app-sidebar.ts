@@ -12,6 +12,7 @@ import {
   LucideStar,
   LucideTrash2,
   LucideUpload,
+  LucideUser,
 } from '@lucide/angular';
 
 @Component({
@@ -27,6 +28,7 @@ import {
     LucideStar,
     LucideTrash2,
     LucideUpload,
+    LucideUser,
   ],
   templateUrl: './app-sidebar.html',
 })

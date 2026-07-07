@@ -7,7 +7,8 @@
     />
 
     <section class="min-w-0">
-      <div class="grid gap-6 px-6 py-6 max-sm:px-4">
+      <app-header searchPlaceholder="ค้นหาไฟล์และโฟลเดอร์" />
+      <div class="grid gap-6 px-6 py-6 max-lg:pb-28 max-sm:px-4">
         <header class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div
@@ -56,6 +57,7 @@
 
             @if (newMenuOpen()) {
               <div
+                data-drive-menu
                 class="fixed z-50 w-56 overflow-hidden rounded-xl border border-blue-100 bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900"
                 [style.top.px]="newMenuPosition().top"
                 [style.left.px]="newMenuPosition().left"
@@ -186,6 +188,8 @@
         }
 
         <section
+          (click)="closeDriveMenus()"
+          (contextmenu)="openBlankContextMenu($event)"
           class="overflow-visible rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900"
         >
           <div
@@ -250,10 +254,10 @@
                 <button
                   type="button"
                   (click)="setViewMode('grid')"
-                  [class.bg-blue-50]="viewMode() === 'grid'"
-                  [class.text-blue-700]="viewMode() === 'grid'"
-                  [class.dark:bg-cyan-300/10]="viewMode() === 'grid'"
-                  [class.dark:text-cyan-300]="viewMode() === 'grid'"
+                  [class.bg-blue-50]="effectiveViewMode() === 'grid'"
+                  [class.text-blue-700]="effectiveViewMode() === 'grid'"
+                  [class.dark:bg-cyan-300/10]="effectiveViewMode() === 'grid'"
+                  [class.dark:text-cyan-300]="effectiveViewMode() === 'grid'"
                   class="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
                   aria-label="Grid view"
                 >
@@ -262,10 +266,10 @@
                 <button
                   type="button"
                   (click)="setViewMode('list')"
-                  [class.bg-blue-50]="viewMode() === 'list'"
-                  [class.text-blue-700]="viewMode() === 'list'"
-                  [class.dark:bg-cyan-300/10]="viewMode() === 'list'"
-                  [class.dark:text-cyan-300]="viewMode() === 'list'"
+                  [class.bg-blue-50]="effectiveViewMode() === 'list'"
+                  [class.text-blue-700]="effectiveViewMode() === 'list'"
+                  [class.dark:bg-cyan-300/10]="effectiveViewMode() === 'list'"
+                  [class.dark:text-cyan-300]="effectiveViewMode() === 'list'"
                   class="grid h-8 w-8 place-items-center rounded-md text-slate-400 hover:text-blue-700 dark:hover:text-cyan-300"
                   aria-label="List view"
                 >
@@ -309,20 +313,56 @@
             </div>
           }
 
-          @if (
-            !loading() &&
-            !loadError() &&
-            (folders().length > 0 || files().length > 0) &&
-            viewMode() === 'grid'
-          ) {
+          @if (effectiveViewMode() === 'grid') {
+            @if (loading()) {
+              <div
+                class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
+              >
+                @for (item of [1, 2, 3, 4]; track item) {
+                  <div
+                    class="overflow-hidden rounded-xl border border-blue-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div class="aspect-4/3 animate-pulse bg-blue-50 dark:bg-slate-800"></div>
+                    <div class="grid gap-3 p-4">
+                      <div
+                        class="h-3 w-8/12 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700"
+                      ></div>
+                      <div
+                        class="h-2 w-5/12 animate-pulse rounded-full bg-slate-100 dark:bg-slate-800"
+                      ></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (loadError()) {
+              <div class="px-5 py-10 text-center">
+                <p class="m-0 text-sm font-bold text-violet-700 dark:text-cyan-200">
+                  {{ loadError() }}
+                </p>
+                <button
+                  type="button"
+                  (click)="loadFiles()"
+                  class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950"
+                >
+                  <svg lucideRefreshCw aria-hidden="true" class="h-4 w-4"></svg>
+                  à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆ
+                </button>
+              </div>
+            } @else if (folders().length === 0 && files().length === 0) {
+              <div class="px-5 py-12 text-center text-sm font-bold text-slate-500 dark:text-slate-400">
+                à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¹„à¸Ÿà¸¥à¹Œà¹ƒà¸™à¹„à¸”à¸£à¸Ÿà¹Œà¸‚à¸­à¸‡à¸„à¸¸à¸“
+              </div>
+            } @else {
             <div
-              class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1"
+              class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
             >
               @for (folder of sortedFolders(); track folder.id) {
                 <article
+                  data-drive-item
                   role="button"
                   tabindex="0"
                   (click)="openFolder(folder)"
+                  (contextmenu)="openFolderContextMenu(folder.id, $event)"
                   (keydown.enter)="openFolder(folder)"
                   (keydown.space)="openFolder(folder)"
                   class="group cursor-pointer rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] focus:outline-none focus:ring-4 focus:ring-blue-100 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900 dark:focus:ring-cyan-300/10"
@@ -360,6 +400,7 @@
 
                   @if (openActionFolderId() === folder.id) {
                     <div
+                      data-drive-menu
                       class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
                       [style.top.px]="actionMenuPosition().top"
                       [style.left.px]="actionMenuPosition().left"
@@ -382,6 +423,14 @@
                       </button>
                       <button
                         type="button"
+                        (click)="$event.stopPropagation(); openShareFolderDialog(folder)"
+                        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      >
+                        <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
+                        แชร์โฟลเดอร์
+                      </button>
+                      <button
+                        type="button"
                         (click)="$event.stopPropagation(); deleteFolder(folder)"
                         class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10 dark:hover:text-rose-200"
                       >
@@ -400,11 +449,19 @@
 
               @for (file of sortedFiles(); track file.id) {
                 <article
+                  data-drive-item
+                  [attr.id]="'my-drive-file-' + file.id"
+                  (contextmenu)="openFileContextMenu(file.id, $event)"
                   [class.border-blue-500]="isFileSelected(file.id)"
                   [class.ring-4]="isFileSelected(file.id)"
                   [class.ring-blue-100]="isFileSelected(file.id)"
                   [class.dark:border-cyan-300]="isFileSelected(file.id)"
                   [class.dark:ring-cyan-300/10]="isFileSelected(file.id)"
+                  [class.border-cyan-400]="highlightedFileId() === file.id"
+                  [class.bg-blue-50]="highlightedFileId() === file.id"
+                  [class.ring-4]="highlightedFileId() === file.id"
+                  [class.ring-cyan-300/40]="highlightedFileId() === file.id"
+                  [class.dark:bg-cyan-300/10]="highlightedFileId() === file.id"
                   class="group rounded-xl border border-blue-100 bg-slate-50 transition hover:border-blue-200 hover:bg-white hover:shadow-[0_18px_36px_rgba(37,99,235,0.12)] dark:border-slate-800 dark:bg-slate-950 dark:hover:border-cyan-300/30 dark:hover:bg-slate-900"
                 >
                   <div
@@ -487,6 +544,7 @@
 
                     @if (openActionFileId() === file.id) {
                       <div
+                        data-drive-menu
                         class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
                         [style.top.px]="actionMenuPosition().top"
                         [style.left.px]="actionMenuPosition().left"
@@ -547,9 +605,10 @@
                 </article>
               }
             </div>
+            }
           } @else {
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-170 border-collapse text-left">
+            <div class="overflow-x-auto max-md:hidden">
+              <table class="w-full min-w-150 border-collapse text-left max-sm:min-w-130">
                 <thead class="text-xs font-extrabold uppercase text-slate-400">
                   <tr>
                     <th class="w-12 px-5 py-3">
@@ -655,9 +714,11 @@
                   } @else {
                     @for (folder of sortedFolders(); track folder.id) {
                       <tr
+                        data-drive-item
                         role="button"
                         tabindex="0"
                         (click)="openFolder(folder)"
+                        (contextmenu)="openFolderContextMenu(folder.id, $event)"
                         (keydown.enter)="openFolder(folder)"
                         (keydown.space)="openFolder(folder)"
                         class="cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-inset focus:ring-blue-100 dark:hover:bg-slate-800/60 dark:focus:ring-cyan-300/10"
@@ -695,6 +756,7 @@
 
                           @if (openActionFolderId() === folder.id) {
                             <div
+                              data-drive-menu
                               class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
                               [style.top.px]="actionMenuPosition().top"
                               [style.left.px]="actionMenuPosition().left"
@@ -717,6 +779,14 @@
                               </button>
                               <button
                                 type="button"
+                                (click)="$event.stopPropagation(); openShareFolderDialog(folder)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
+                                แชร์โฟลเดอร์
+                              </button>
+                              <button
+                                type="button"
                                 (click)="$event.stopPropagation(); deleteFolder(folder)"
                                 class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-300/10 dark:hover:text-rose-200"
                               >
@@ -736,8 +806,15 @@
 
                     @for (file of sortedFiles(); track file.id) {
                       <tr
+                        data-drive-item
+                        [attr.id]="'my-drive-file-' + file.id"
+                        (contextmenu)="openFileContextMenu(file.id, $event)"
                         [class.bg-blue-50]="isFileSelected(file.id)"
                         [class.dark:bg-cyan-300/10]="isFileSelected(file.id)"
+                        [class.bg-blue-50]="highlightedFileId() === file.id"
+                        [class.dark:bg-cyan-300/10]="highlightedFileId() === file.id"
+                        [class.ring-2]="highlightedFileId() === file.id"
+                        [class.ring-cyan-300]="highlightedFileId() === file.id"
                         class="hover:bg-slate-50 dark:hover:bg-slate-800/60"
                       >
                         <td class="px-5 py-4">
@@ -804,6 +881,7 @@
 
                           @if (openActionFileId() === file.id) {
                             <div
+                              data-drive-menu
                               class="fixed z-50 w-44 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
                               [style.top.px]="actionMenuPosition().top"
                               [style.left.px]="actionMenuPosition().left"
@@ -1481,7 +1559,7 @@
     >
       <form
         (submit)="shareMode() === 'user' ? submitShare($event) : createPublicShareLink($event)"
-        class="w-full max-w-md rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900"
+        class="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-blue-100 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-slate-700 dark:bg-slate-900 max-sm:p-4"
       >
         <div class="mb-4 flex items-start justify-between gap-4">
           <div class="min-w-0">
@@ -1490,9 +1568,9 @@
             </h2>
             <p
               class="m-0 mt-1 truncate text-sm font-bold text-slate-500 dark:text-slate-400"
-              [title]="shareTarget()?.name"
+              [title]="shareTarget()?.item?.name"
             >
-              {{ shareTarget()?.name }}
+              {{ shareTarget()?.item?.name }}
             </p>
           </div>
           <button
@@ -1523,20 +1601,22 @@
             <svg lucideShare2 aria-hidden="true" class="h-4 w-4"></svg>
             Email
           </button>
-          <button
-            type="button"
-            (click)="setShareMode('link')"
-            [disabled]="sharingFileId() !== null || creatingShareLink()"
-            [class.bg-white]="shareMode() === 'link'"
-            [class.text-blue-700]="shareMode() === 'link'"
-            [class.shadow-sm]="shareMode() === 'link'"
-            [class.dark:bg-slate-900]="shareMode() === 'link'"
-            [class.dark:text-cyan-300]="shareMode() === 'link'"
-            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold text-slate-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
-          >
-            <svg lucideLink aria-hidden="true" class="h-4 w-4"></svg>
-            Anyone with link
-          </button>
+          @if (shareTarget()?.kind === 'file') {
+            <button
+              type="button"
+              (click)="setShareMode('link')"
+              [disabled]="sharingFileId() !== null || creatingShareLink()"
+              [class.bg-white]="shareMode() === 'link'"
+              [class.text-blue-700]="shareMode() === 'link'"
+              [class.shadow-sm]="shareMode() === 'link'"
+              [class.dark:bg-slate-900]="shareMode() === 'link'"
+              [class.dark:text-cyan-300]="shareMode() === 'link'"
+              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-extrabold text-slate-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
+            >
+              <svg lucideLink aria-hidden="true" class="h-4 w-4"></svg>
+              Anyone with link
+            </button>
+          }
         </div>
 
         <div class="grid gap-4">
@@ -1600,17 +1680,105 @@
                 class="mb-2 block text-sm font-extrabold text-slate-700 dark:text-slate-200"
                 >สิทธิ์</label
               >
-              <select
-                id="myDriveSharePermission"
-                [value]="sharePermission()"
-                (change)="sharePermission.set($any($event.target).value)"
-                [disabled]="sharingFileId() !== null"
-                class="min-h-12 w-full rounded-lg border border-blue-100 bg-slate-50 px-4 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
-              >
-                <option value="viewer">viewer</option>
-                <option value="editor">editor</option>
-              </select>
+              <div class="relative">
+                <select
+                  id="myDriveSharePermission"
+                  [value]="sharePermission()"
+                  (change)="sharePermission.set($any($event.target).value)"
+                  [disabled]="sharingFileId() !== null"
+                  class="min-h-12 w-full appearance-none rounded-lg border border-blue-100 bg-slate-50 px-4 pr-12 font-[inherit] font-bold outline-none focus:border-blue-600 focus:bg-white focus:text-black focus:shadow-[0_0_0_4px_rgba(59,130,246,0.14)] disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+                >
+                  <option value="viewer">viewer</option>
+                  <option value="editor">editor</option>
+                </select>
+                <svg
+                  lucideChevronDown
+                  aria-hidden="true"
+                  class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-300"
+                ></svg>
+              </div>
             </div>
+
+            <section
+              class="rounded-xl border border-blue-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+            >
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <h3 class="m-0 text-sm font-black text-slate-800 dark:text-slate-100">
+                  ผู้ที่มีสิทธิ์เข้าถึง
+                </h3>
+                <button
+                  type="button"
+                  (click)="loadSharePermissions()"
+                  [disabled]="loadingSharePermissions() || !shareTarget()"
+                  class="text-xs font-black text-blue-700 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:text-cyan-300"
+                >
+                  รีเฟรช
+                </button>
+              </div>
+
+              @if (loadingSharePermissions()) {
+                <div class="rounded-lg bg-white px-3 py-3 text-sm font-bold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                  กำลังโหลดรายการสิทธิ์...
+                </div>
+              } @else if (sharePermissions().length === 0) {
+                <div class="rounded-lg bg-white px-3 py-3 text-sm font-bold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                  ยังไม่มีผู้ใช้ที่ได้รับสิทธิ์
+                </div>
+              } @else {
+                <div class="grid gap-2">
+                  @for (permission of sharePermissions(); track permission.id) {
+                    <div
+                      class="flex flex-wrap items-center gap-3 rounded-lg bg-white p-3 dark:bg-slate-900"
+                    >
+                      <span
+                        class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-black text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+                      >
+                        {{ permission.firstName.charAt(0) || permission.email.charAt(0) }}
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="m-0 truncate text-sm font-black text-slate-800 dark:text-slate-100">
+                          {{ permission.firstName }} {{ permission.lastName }}
+                        </p>
+                        <p class="m-0 truncate text-xs font-bold text-slate-500 dark:text-slate-400">
+                          {{ permission.email }}
+                        </p>
+                      </div>
+                      <div class="relative w-32 max-sm:w-full">
+                        <select
+                          [value]="permission.permission"
+                          (change)="updateSharePermission(permission, $any($event.target).value)"
+                          [disabled]="updatingSharePermissionId() !== null || removingSharePermissionId() !== null"
+                          class="min-h-10 w-full appearance-none rounded-lg border border-blue-100 bg-slate-50 px-3 pr-10 text-sm font-black outline-none focus:border-blue-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-cyan-300"
+                        >
+                          <option value="viewer">viewer</option>
+                          <option value="editor">editor</option>
+                        </select>
+                        <svg
+                          lucideChevronDown
+                          aria-hidden="true"
+                          class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-300"
+                        ></svg>
+                      </div>
+                      <button
+                        type="button"
+                        (click)="removeSharePermission(permission)"
+                        [disabled]="updatingSharePermissionId() !== null || removingSharePermissionId() !== null"
+                        class="grid h-10 w-10 place-items-center rounded-lg border border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-300/20 dark:bg-slate-950 dark:text-rose-300 dark:hover:bg-rose-300/10"
+                        aria-label="ลบสิทธิ์ผู้ใช้"
+                        title="ลบสิทธิ์ผู้ใช้"
+                      >
+                        <svg
+                          lucideTrash2
+                          aria-hidden="true"
+                          class="h-4 w-4"
+                          [class.animate-pulse]="removingSharePermissionId() === permission.id"
+                        ></svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </section>
           }
 
           <div>
@@ -1704,7 +1872,13 @@
                 class="h-4 w-4"
                 [class.animate-pulse]="sharingFileId() !== null"
               ></svg>
-              {{ sharingFileId() !== null ? 'กำลังแชร์...' : 'แชร์ไฟล์' }}
+              {{
+                sharingFileId() !== null
+                  ? 'กำลังแชร์...'
+                  : shareTarget()?.kind === 'folder'
+                    ? 'แชร์โฟลเดอร์'
+                    : 'แชร์ไฟล์'
+              }}
             }
           </button>
         </div>

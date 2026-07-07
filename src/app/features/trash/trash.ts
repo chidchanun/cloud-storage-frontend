@@ -30,6 +30,7 @@ import {
   UserFile,
 } from '../../core/services/file.service';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
+import { AppHeader } from '../../shared/components/app-header/app-header';
 
 interface TrashFile {
   id: number;
@@ -46,6 +47,7 @@ type DeleteMode = 'single' | 'selected' | 'all';
   imports: [
     RouterLink,
     AppSidebar,
+    AppHeader,
     LucideArrowLeft,
     LucideFile,
     LucideFileArchive,

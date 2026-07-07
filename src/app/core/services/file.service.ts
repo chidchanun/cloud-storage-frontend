@@ -26,6 +26,13 @@ interface ApiListFilesResponse {
   total: number;
 }
 
+interface ApiSearchFilesResponse {
+  message: string;
+  keyword: string;
+  files: ApiUserFile[];
+  total: number;
+}
+
 interface ApiListTrashFilesResponse {
   message: string;
   files: ApiUserFile[];
@@ -71,6 +78,27 @@ interface ApiShareFileResponse {
   shared_file: ApiSharedFile;
 }
 
+interface ApiListSharedFilePermissionsResponse {
+  message: string;
+  permissions: ApiSharedFilePermission[];
+  total: number;
+}
+
+interface ApiUpdateSharedFilePermissionResponse {
+  message: string;
+  shared_file: {
+    file_id: number;
+    shared_by_user_id: number;
+    shared_with_user_id: number;
+    permission: string;
+    expires_at?: string | null;
+  };
+}
+
+interface ApiRemoveSharedFilePermissionResponse {
+  message: string;
+}
+
 interface ApiCreatePublicLinkResponse {
   message: string;
   public_link: ApiPublicFileLink;
@@ -112,6 +140,20 @@ interface ApiShareUser {
   email: string;
   email_verified: boolean;
   picture_path?: string | null;
+}
+
+interface ApiSharedFilePermission {
+  id: number;
+  file_id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  picture_path?: string | null;
+  permission: string;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserFile {
@@ -195,6 +237,43 @@ export interface ShareFileResponse {
   sharedFile: SharedFile;
 }
 
+export interface SharedFilePermission {
+  id: number;
+  fileId: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  picturePath?: string | null;
+  permission: 'viewer' | 'editor';
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSharedFilePermissionRequest {
+  fileId: number;
+  email: string;
+  permission: 'viewer' | 'editor';
+  expiresAt?: string | null;
+}
+
+export interface UpdateSharedFilePermissionResponse {
+  message: string;
+  fileId: number;
+  permission: string;
+  expiresAt?: string | null;
+}
+
+export interface RemoveSharedFilePermissionRequest {
+  sharedFileId: number;
+  email: string;
+}
+
+export interface RemoveSharedFilePermissionResponse {
+  message: string;
+}
+
 export interface CreatePublicLinkRequest {
   fileId: number;
   expiresAt?: string | null;
@@ -249,6 +328,17 @@ export class FileService {
 
     return this.http
       .get<ApiListFilesResponse>(this.apiUrl, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(map((response) => response.files.map((file) => this.normalizeFile(file))));
+  }
+
+  search(keyword: string): Observable<UserFile[]> {
+    const params = new HttpParams().set('q', keyword);
+
+    return this.http
+      .get<ApiSearchFilesResponse>(`${this.apiUrl}/search`, {
         params,
         withCredentials: true,
       })
@@ -351,6 +441,65 @@ export class FileService {
         map((response) => ({
           message: response.message,
           sharedFile: this.normalizeSharedFile(response.shared_file),
+        })),
+      );
+  }
+
+  listSharePermissions(fileId: number): Observable<SharedFilePermission[]> {
+    const params = new HttpParams().set('file_id', fileId);
+
+    return this.http
+      .get<ApiListSharedFilePermissionsResponse>(`${this.apiUrl}/share-file/permissions`, {
+        params,
+        withCredentials: true,
+      })
+      .pipe(
+        map((response) =>
+          response.permissions.map((permission) => this.normalizeSharedFilePermission(permission)),
+        ),
+      );
+  }
+
+  updateSharePermission(
+    data: UpdateSharedFilePermissionRequest,
+  ): Observable<UpdateSharedFilePermissionResponse> {
+    return this.http
+      .patch<ApiUpdateSharedFilePermissionResponse>(
+        `${this.apiUrl}/share-file/permissions`,
+        {
+          file_id: data.fileId,
+          email: data.email,
+          permission: data.permission,
+          expires_at: data.expiresAt || null,
+        },
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
+          fileId: response.shared_file.file_id,
+          permission: response.shared_file.permission,
+          expiresAt: response.shared_file.expires_at ?? null,
+        })),
+      );
+  }
+
+  removeSharePermission(
+    data: RemoveSharedFilePermissionRequest,
+  ): Observable<RemoveSharedFilePermissionResponse> {
+    return this.http
+      .delete<ApiRemoveSharedFilePermissionResponse>(
+        `${this.apiUrl}/share-file/permissions/${data.sharedFileId}`,
+        {
+          body: {
+            email: data.email,
+          },
+          withCredentials: true,
+        },
+      )
+      .pipe(
+        map((response) => ({
+          message: response.message,
         })),
       );
   }
@@ -497,6 +646,24 @@ export class FileService {
       fileName: file.file_name,
       permission: file.permission,
       expiresAt: file.expires_at ?? null,
+    };
+  }
+
+  private normalizeSharedFilePermission(
+    permission: ApiSharedFilePermission,
+  ): SharedFilePermission {
+    return {
+      id: permission.id,
+      fileId: permission.file_id,
+      userId: permission.user_id,
+      firstName: permission.first_name,
+      lastName: permission.last_name,
+      email: permission.email,
+      picturePath: permission.picture_path ?? null,
+      permission: permission.permission === 'editor' ? 'editor' : 'viewer',
+      expiresAt: permission.expires_at ?? null,
+      createdAt: permission.created_at,
+      updatedAt: permission.updated_at,
     };
   }
 

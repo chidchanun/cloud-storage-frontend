@@ -2,7 +2,9 @@
   <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
     <app-sidebar [showUpload]="false" />
 
-    <section class="grid content-start gap-6 px-6 py-6 max-sm:px-4">
+    <section class="min-w-0">
+      <app-header searchPlaceholder="ค้นหาในถังขยะ" />
+      <div class="grid content-start gap-6 px-6 py-6 max-lg:pb-28 max-sm:px-4">
     <header class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <a
@@ -111,8 +113,106 @@
     }
 
     <section class="overflow-hidden rounded-xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-170 border-collapse text-left">
+      <div class="grid gap-3 p-4 md:hidden">
+        @if (loading()) {
+        @for (item of [1, 2, 3, 4]; track item) {
+        <div class="rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+          <div class="flex animate-pulse items-center gap-3">
+            <div class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-slate-800"></div>
+            <div class="grid flex-1 gap-2">
+              <div class="h-3 w-8/12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+              <div class="h-2 w-5/12 rounded-full bg-slate-100 dark:bg-slate-800"></div>
+            </div>
+          </div>
+        </div>
+        }
+        } @else if (loadError()) {
+        <div class="rounded-xl border border-rose-100 bg-rose-50 p-5 text-center dark:border-rose-300/20 dark:bg-rose-300/10">
+          <p class="m-0 text-sm font-bold text-rose-700 dark:text-rose-200">{{ loadError() }}</p>
+          <button
+            type="button"
+            (click)="loadTrashFiles()"
+            class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950">
+            <svg lucideRefreshCw aria-hidden="true" class="h-4 w-4"></svg>
+            ลองใหม่
+          </button>
+        </div>
+        } @else if (files().length === 0) {
+        <div class="rounded-xl border border-blue-100 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-950">
+          <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
+            <svg lucideTrash2 aria-hidden="true" class="h-7 w-7"></svg>
+          </div>
+          <p class="m-0 text-sm font-black text-slate-700 dark:text-slate-200">ถังขยะว่างอยู่</p>
+          <p class="m-0 mt-1 text-sm text-slate-500 dark:text-slate-400">ไฟล์ที่ถูกลบจะแสดงอยู่ที่นี่</p>
+        </div>
+        } @else {
+        @for (file of files(); track file.id) {
+        <article
+          [class.border-blue-500]="isFileSelected(file.id)"
+          [class.ring-4]="isFileSelected(file.id)"
+          [class.ring-blue-100]="isFileSelected(file.id)"
+          [class.dark:border-cyan-300]="isFileSelected(file.id)"
+          [class.dark:ring-cyan-300/10]="isFileSelected(file.id)"
+          class="rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+          <div class="flex items-start gap-3">
+            <label class="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg bg-white shadow-sm dark:bg-slate-900" aria-label="เลือกไฟล์">
+              <input
+                type="checkbox"
+                class="h-4 w-4 cursor-pointer accent-blue-600 dark:accent-cyan-300"
+                [checked]="isFileSelected(file.id)"
+                [disabled]="bulkDeleting()"
+                (change)="toggleFileSelection(file, $event)" />
+            </label>
+            <div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
+              @switch (fileIcon(file.type)) {
+              @case ('image') {
+              <svg lucideFileImage aria-hidden="true" class="h-5 w-5"></svg>
+              }
+              @case ('text') {
+              <svg lucideFileText aria-hidden="true" class="h-5 w-5"></svg>
+              }
+              @case ('archive') {
+              <svg lucideFileArchive aria-hidden="true" class="h-5 w-5"></svg>
+              }
+              @default {
+              <svg lucideFile aria-hidden="true" class="h-5 w-5"></svg>
+              }
+              }
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="m-0 break-words text-sm font-black" [title]="file.name">{{ file.name }}</h3>
+              <div class="mt-2 grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                <span>{{ file.size }}</span>
+                <span>{{ file.deletedAt }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              (click)="restoreFile(file)"
+              [disabled]="restoringFileId() !== null || deletingFileId() !== null"
+              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
+              <svg lucideRotateCcw aria-hidden="true" class="h-4 w-4" [class.animate-spin]="restoringFileId() === file.id"></svg>
+              กู้คืน
+            </button>
+            <button
+              type="button"
+              (click)="deleteFile(file)"
+              [disabled]="restoringFileId() !== null || deletingFileId() !== null"
+              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 text-sm font-extrabold text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-300/20 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-300/10">
+              <svg lucideTrash2 aria-hidden="true" class="h-4 w-4" [class.animate-pulse]="deletingFileId() === file.id"></svg>
+              ลบถาวร
+            </button>
+          </div>
+        </article>
+        }
+        }
+      </div>
+
+      <div class="overflow-x-auto max-md:hidden">
+        <table class="w-full min-w-150 border-collapse text-left max-sm:min-w-130">
           <thead class="border-b border-blue-100 text-xs font-extrabold uppercase text-slate-400 dark:border-slate-800">
             <tr>
               <th class="w-12 px-5 py-3">
@@ -240,6 +340,7 @@
         </table>
       </div>
     </section>
+      </div>
     </section>
   </div>
 
