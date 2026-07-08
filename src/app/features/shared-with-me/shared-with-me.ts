@@ -145,7 +145,7 @@ export class SharedWithMe {
   }
 
   openFolder(folder: SharedFolderItem): void {
-    void this.router.navigate(['/my-drive/folders', folder.folderId]);
+    void this.router.navigate(['/shared-with-me/folders', folder.folderId]);
   }
 
   downloadFile(file: SharedFileItem): void {

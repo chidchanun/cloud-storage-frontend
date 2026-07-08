@@ -22,11 +22,19 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'plans',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'trash',
     renderMode: RenderMode.Server,
   },
   {
     path: 'shared-with-me',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'shared-with-me/folders/:id',
     renderMode: RenderMode.Server,
   },
   {

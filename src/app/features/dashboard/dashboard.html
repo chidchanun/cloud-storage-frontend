@@ -1,4 +1,4 @@
-<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+﻿<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
   <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
     <app-sidebar [uploadText]="uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'" [uploadBusy]="uploading()" />
 
@@ -213,11 +213,10 @@
                 <p class="m-0 text-sm font-bold text-violet-700 dark:text-cyan-200">{{ loadFilesError() }}</p>
                 <button type="button" (click)="loadFiles()" class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950">
                   <svg lucideRefreshCw aria-hidden="true" class="h-4 w-4"></svg>
-                  à¸¥à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆ
                 </button>
               </div>
               } @else if (files().length === 0) {
-              <div class="px-5 py-10 text-center text-sm font-bold text-slate-500 dark:text-slate-400">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¹„à¸Ÿà¸¥à¹Œ à¸­à¸±à¸›à¹‚à¸«à¸¥à¸”à¹„à¸Ÿà¸¥à¹Œà¹à¸£à¸à¸‚à¸­à¸‡à¸„à¸¸à¸“à¹„à¸”à¹‰à¹€à¸¥à¸¢</div>
+              <div class="px-5 py-10 text-center text-sm font-bold text-slate-500 dark:text-slate-400">ยังไม่มีไฟล์ อัปโหลดไฟล์แรกของคุณได้เลย</div>
               } @else {
               <div class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2">
                 @for (file of sortedFiles(); track file.id) {

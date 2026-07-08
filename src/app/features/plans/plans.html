@@ -1,0 +1,169 @@
+<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+  <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
+    <app-sidebar [showUpload]="false" />
+
+    <section class="min-w-0">
+      <app-header searchPlaceholder="ค้นหาไฟล์" />
+
+      <div class="mx-auto grid max-w-7xl gap-6 px-6 py-6 max-lg:pb-28 max-sm:px-4">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-300">
+              <svg lucideCrown aria-hidden="true" class="h-4 w-4"></svg>
+              AnuCloud Plan
+            </div>
+            <h1 class="m-0 text-3xl font-black tracking-normal sm:text-4xl">อัปเกรดแพ็กเกจ</h1>
+            <p class="m-0 mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500 dark:text-slate-400">
+              เลือกพื้นที่จัดเก็บที่เหมาะกับการใช้งานของคุณ เปลี่ยนแพ็กเกจได้ทันทีและยังเก็บไฟล์เดิมไว้ครบ
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="loadPlans()"
+            [disabled]="loading()"
+            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 shadow-sm hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300"
+          >
+            <svg lucideRefreshCw aria-hidden="true" class="h-5 w-5" [class.animate-spin]="loading()"></svg>
+            โหลดใหม่
+          </button>
+        </div>
+
+        @if (message()) {
+          <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">
+            {{ message() }}
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 dark:border-rose-300/20 dark:bg-rose-300/10 dark:text-rose-200">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <section class="grid gap-4 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm shadow-blue-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="m-0 text-sm font-black text-slate-500 dark:text-slate-400">แพ็กเกจปัจจุบัน</p>
+              <h2 class="m-0 mt-1 text-2xl font-black">
+                {{ currentPlan()?.userPlan?.planName || 'ยังไม่มีแพ็กเกจ' }}
+              </h2>
+            </div>
+
+            @if (currentPlan()) {
+              <div class="rounded-xl bg-blue-50 px-4 py-3 text-right dark:bg-cyan-300/10">
+                <p class="m-0 text-xs font-black uppercase text-blue-700 dark:text-cyan-300">
+                  {{ billingLabel(currentPlan()!.userPlan.billingCycle) }}
+                </p>
+                <p class="m-0 mt-1 text-sm font-extrabold text-slate-700 dark:text-slate-200">
+                  {{ formatBytes(currentPlan()!.usedStorageBytes) }} / {{ formatBytes(currentPlan()!.userPlan.storageLimitBytes) }}
+                </p>
+              </div>
+            }
+          </div>
+
+          <div class="h-3 overflow-hidden rounded-full bg-blue-50 dark:bg-slate-800">
+            <div
+              class="h-full rounded-full bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 transition-[width] duration-300"
+              [style.width.%]="usagePercent()"
+            ></div>
+          </div>
+          <p class="m-0 text-xs font-bold text-slate-500 dark:text-slate-400">
+            ใช้พื้นที่แล้ว {{ usagePercent() }}%
+          </p>
+        </section>
+
+        @if (loading() && plans().length === 0) {
+          <div class="grid min-h-56 place-items-center rounded-2xl border border-blue-100 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div class="flex items-center gap-3 text-sm font-black text-slate-500 dark:text-slate-300">
+              <svg lucideLoaderCircle aria-hidden="true" class="h-5 w-5 animate-spin"></svg>
+              กำลังโหลดแพ็กเกจ
+            </div>
+          </div>
+        } @else {
+          <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            @for (plan of plans(); track plan.code) {
+              <article
+                class="relative grid gap-5 rounded-2xl border bg-white p-5 shadow-sm shadow-blue-900/5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-900/10 dark:bg-slate-900 dark:shadow-none"
+                [ngClass]="
+                  isCurrentPlan(plan)
+                    ? 'border-blue-500 dark:border-cyan-300'
+                    : 'border-blue-100 dark:border-slate-800'
+                "
+              >
+                @if (isCurrentPlan(plan)) {
+                  <div class="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-black text-white dark:bg-cyan-300 dark:text-slate-950">
+                    <svg lucideCheck aria-hidden="true" class="h-3.5 w-3.5"></svg>
+                    ใช้อยู่
+                  </div>
+                }
+
+                <div class="grid gap-3 pr-20">
+                  <span class="grid h-12 w-12 place-items-center rounded-xl bg-linear-to-br from-violet-700 via-blue-600 to-cyan-400 text-white shadow-lg shadow-blue-900/20 dark:text-slate-950">
+                    @if (plan.billingCycle === 'free') {
+                      <svg lucideSparkles aria-hidden="true" class="h-6 w-6"></svg>
+                    } @else {
+                      <svg lucideZap aria-hidden="true" class="h-6 w-6"></svg>
+                    }
+                  </span>
+                  <div>
+                    <h3 class="m-0 text-xl font-black">{{ plan.name }}</h3>
+                    <p class="m-0 mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+                      {{ billingLabel(plan.billingCycle) }}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="m-0 text-4xl font-black tracking-normal">{{ priceLabel(plan) }}</p>
+                  <p class="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    {{ plan.description || 'พื้นที่จัดเก็บสำหรับ AnuCloud' }}
+                  </p>
+                </div>
+
+                <div class="grid gap-3 text-sm font-bold text-slate-600 dark:text-slate-300">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="inline-flex items-center gap-2">
+                      <svg lucideHardDrive aria-hidden="true" class="h-4 w-4 text-blue-600 dark:text-cyan-300"></svg>
+                      พื้นที่
+                    </span>
+                    <span class="font-black text-slate-950 dark:text-slate-50">{{ formatBytes(plan.storageLimitBytes) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-3">
+                    <span>จำนวนไฟล์</span>
+                    <span class="font-black text-slate-950 dark:text-slate-50">{{ limitLabel(plan.maxFiles) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-3">
+                    <span>แชร์ต่อไฟล์</span>
+                    <span class="font-black text-slate-950 dark:text-slate-50">{{ limitLabel(plan.maxShareUsersPerFile) }}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  (click)="selectPlan(plan)"
+                  [disabled]="isCurrentPlan(plan) || selectingPlanCode() !== null"
+                  class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60"
+                  [ngClass]="
+                    isCurrentPlan(plan)
+                      ? 'border border-blue-200 bg-blue-50 text-blue-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-300'
+                      : 'bg-blue-600 text-white hover:bg-violet-700 dark:bg-cyan-300 dark:text-slate-950'
+                  "
+                >
+                  @if (selectingPlanCode() === plan.code) {
+                    <svg lucideLoaderCircle aria-hidden="true" class="h-5 w-5 animate-spin"></svg>
+                    กำลังเปลี่ยนแพ็กเกจ
+                  } @else if (isCurrentPlan(plan)) {
+                    แพ็กเกจปัจจุบัน
+                  } @else {
+                    เลือกแพ็กเกจนี้
+                  }
+                </button>
+              </article>
+            }
+          </section>
+        }
+      </div>
+    </section>
+  </div>
+</main>

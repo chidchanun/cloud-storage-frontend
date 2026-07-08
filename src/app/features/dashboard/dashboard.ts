@@ -1,4 +1,4 @@
-import {
+﻿import {
   afterNextRender,
   Component,
   computed,
@@ -41,6 +41,10 @@ import {
   FileService,
   UserFile,
 } from '../../core/services/file.service';
+import {
+  PlanService,
+  UserStoragePlan,
+} from '../../core/services/plan.service';
 import { environment } from '../../../environments/environment';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
 import { AppHeader } from '../../shared/components/app-header/app-header';
@@ -108,6 +112,7 @@ const fileViewModeStorageKey = 'anucloud:file-view-mode';
 export class Dashboard implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly fileService = inject(FileService);
+  private readonly planService = inject(PlanService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly previewObjectUrls = new Map<number, string>();
@@ -122,6 +127,13 @@ export class Dashboard implements OnDestroy {
   readonly uploadProgressLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
+  readonly storagePlan = signal<UserStoragePlan | null>(null);
+  readonly storagePlanLoading = signal(false);
+  readonly storageUsagePercent = computed(() => {
+    const percent = this.storagePlan()?.storageUsagePercent ?? 0;
+
+    return Math.min(100, Math.max(0, Math.round(percent)));
+  });
 
   readonly downloadingFileId = signal<number | null>(null);
   readonly downloadMessage = signal('');
@@ -192,6 +204,7 @@ export class Dashboard implements OnDestroy {
     afterNextRender(() => {
       this.syncMobileViewMode();
       this.restoreFileViewMode();
+      this.loadStoragePlan();
       window.setTimeout(() => this.loadFiles(), 0);
     });
   }
@@ -217,6 +230,22 @@ export class Dashboard implements OnDestroy {
         error: () => {
           this.loadFilesError.set('ไม่สามารถโหลดไฟล์ได้');
         },
+      });
+  }
+
+  loadStoragePlan(): void {
+    if (this.storagePlanLoading()) {
+      return;
+    }
+
+    this.storagePlanLoading.set(true);
+
+    this.planService
+      .currentPlan()
+      .pipe(finalize(() => this.storagePlanLoading.set(false)))
+      .subscribe({
+        next: (plan) => this.storagePlan.set(plan),
+        error: () => this.storagePlan.set(null),
       });
   }
 
@@ -464,6 +493,12 @@ export class Dashboard implements OnDestroy {
       return;
     }
 
+    if (this.storagePlan() && file.size > this.storagePlan()!.remainingStorageBytes) {
+      this.uploadError.set('ไม่สามารถอัปโหลดได้ พื้นที่จัดเก็บคงเหลือไม่พอ');
+      input.value = '';
+      return;
+    }
+
     this.uploading.set(true);
     this.uploadProgress.set(0);
     this.uploadProgressLabel.set(file.name);
@@ -495,13 +530,15 @@ export class Dashboard implements OnDestroy {
           this.loadImagePreviews([uploadedFile]);
           this.loadFilesError.set('');
           this.uploadProgress.set(100);
+          this.loadStoragePlan();
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
         error: (error) => {
           this.uploadError.set(
-            error.status === 413
+            error.error?.message ||
+            (error.status === 413
               ? 'ไฟล์มีขนาดใหญ่เกินไป'
-              : 'ไม่สามารถอัปโหลดไฟล์ได้',
+              : 'ไม่สามารถอัปโหลดไฟล์ได้'),
           );
         },
       });
@@ -743,7 +780,7 @@ export class Dashboard implements OnDestroy {
     return firstFile.updatedAtTime - secondFile.updatedAtTime;
   }
 
-  private formatFileSize(sizeBytes: number): string {
+  formatFileSize(sizeBytes: number): string {
     if (sizeBytes < 1024) {
       return `${sizeBytes} B`;
     }

@@ -334,6 +334,153 @@
               </div>
             </form>
           </section>
+
+          @if (currentUser() && !currentUser()?.hasPassword) {
+            <section
+              class="rounded-3xl border border-blue-100 bg-white shadow-sm shadow-blue-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:col-start-2"
+            >
+              <div class="border-b border-slate-100 px-6 py-5 dark:border-slate-800 sm:px-8">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="grid size-10 place-items-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+                  >
+                    <svg lucideLockKeyhole class="size-5" aria-hidden="true"></svg>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">ตั้งรหัสผ่าน</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      บัญชีนี้เข้าสู่ระบบด้วย Google อยู่ตอนนี้ ตั้งรหัสผ่านเพื่อให้ login ด้วย email ได้ด้วย
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              @if (passwordMessage()) {
+                <div
+                  class="mx-6 mt-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/40 dark:text-emerald-200 sm:mx-8"
+                  role="status"
+                >
+                  <svg lucideCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true"></svg>
+                  <span>{{ passwordMessage() }}</span>
+                </div>
+              }
+
+              @if (passwordError()) {
+                <div
+                  class="mx-6 mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/40 dark:text-rose-200 sm:mx-8"
+                  role="alert"
+                >
+                  {{ passwordError() }}
+                </div>
+              }
+
+              <form [formGroup]="passwordForm" (ngSubmit)="setPassword()" novalidate>
+                <div class="space-y-5 p-6 sm:p-8">
+                  <div>
+                    <label
+                      for="newPassword"
+                      class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                    >
+                      รหัสผ่านใหม่ <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <svg
+                        lucideLockKeyhole
+                        class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      ></svg>
+                      <input
+                        id="newPassword"
+                        [type]="showPassword() ? 'text' : 'password'"
+                        formControlName="password"
+                        autocomplete="new-password"
+                        class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10"
+                        [class.border-rose-400]="isPasswordInvalid('password')"
+                        placeholder="อย่างน้อย 8 ตัวอักษร"
+                      />
+                      <button
+                        type="button"
+                        class="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        (click)="togglePassword()"
+                        [attr.aria-label]="showPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
+                      >
+                        @if (showPassword()) {
+                          <svg lucideEyeOff class="size-4" aria-hidden="true"></svg>
+                        } @else {
+                          <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                        }
+                      </button>
+                    </div>
+                    @if (isPasswordInvalid('password')) {
+                      <p class="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                        {{ passwordFieldError('password') }}
+                      </p>
+                    }
+                  </div>
+
+                  <div>
+                    <label
+                      for="confirmNewPassword"
+                      class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
+                    >
+                      ยืนยันรหัสผ่าน <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <svg
+                        lucideLockKeyhole
+                        class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      ></svg>
+                      <input
+                        id="confirmNewPassword"
+                        [type]="showConfirmPassword() ? 'text' : 'password'"
+                        formControlName="confirmPassword"
+                        autocomplete="new-password"
+                        class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10"
+                        [class.border-rose-400]="isPasswordInvalid('confirmPassword')"
+                        placeholder="กรอกรหัสผ่านอีกครั้ง"
+                      />
+                      <button
+                        type="button"
+                        class="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        (click)="toggleConfirmPassword()"
+                        [attr.aria-label]="showConfirmPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
+                      >
+                        @if (showConfirmPassword()) {
+                          <svg lucideEyeOff class="size-4" aria-hidden="true"></svg>
+                        } @else {
+                          <svg lucideEye class="size-4" aria-hidden="true"></svg>
+                        }
+                      </button>
+                    </div>
+                    @if (isPasswordInvalid('confirmPassword')) {
+                      <p class="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                        {{ passwordFieldError('confirmPassword') }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <div
+                  class="flex justify-end border-t border-slate-100 bg-slate-50/70 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/40 sm:px-8"
+                >
+                  <button
+                    type="submit"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-600 via-violet-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 dark:from-blue-500 dark:via-violet-500 dark:to-cyan-400 dark:text-slate-950 dark:focus-visible:ring-offset-slate-900 sm:w-auto"
+                    [disabled]="settingPassword() || passwordForm.invalid"
+                  >
+                    @if (settingPassword()) {
+                      <svg lucideLoaderCircle class="size-4 animate-spin" aria-hidden="true"></svg>
+                      กำลังตั้งรหัสผ่าน...
+                    } @else {
+                      <svg lucideLockKeyhole class="size-4" aria-hidden="true"></svg>
+                      ตั้งรหัสผ่าน
+                    }
+                  </button>
+                </div>
+              </form>
+            </section>
+          }
         </div>
       </div>
     </section>

@@ -50,6 +50,10 @@ import {
   UpdateSharedFolderPermissionResponse,
   UserFolder,
 } from '../../core/services/folder.service';
+import {
+  PlanService,
+  UserStoragePlan,
+} from '../../core/services/plan.service';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
 import { AppHeader } from '../../shared/components/app-header/app-header';
 
@@ -144,11 +148,13 @@ export class MyDrive {
   private readonly destroyRef = inject(DestroyRef);
   private readonly fileService = inject(FileService);
   private readonly folderService = inject(FolderService);
+  private readonly planService = inject(PlanService);
   private readonly previewObjectUrls = new Map<number, string>();
 
   readonly folders = signal<MyDriveFolder[]>([]);
   readonly files = signal<MyDriveFile[]>([]);
   readonly currentFolderId = signal<number | null>(null);
+  readonly sharedDriveMode = signal(false);
   readonly folderPath = signal<FolderPathItem[]>([]);
   readonly loading = signal(false);
   readonly loadError = signal('');
@@ -157,6 +163,13 @@ export class MyDrive {
   readonly uploadProgressLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
+  readonly storagePlan = signal<UserStoragePlan | null>(null);
+  readonly storagePlanLoading = signal(false);
+  readonly storageUsagePercent = computed(() => {
+    const percent = this.storagePlan()?.storageUsagePercent ?? 0;
+
+    return Math.min(100, Math.max(0, Math.round(percent)));
+  });
   readonly creatingFolder = signal(false);
   readonly createFolderDialogOpen = signal(false);
   readonly newFolderName = signal('');
@@ -267,6 +280,7 @@ export class MyDrive {
     afterNextRender(() => {
       this.syncMobileViewMode();
       this.restoreViewMode();
+      this.loadStoragePlan();
       this.route.paramMap.subscribe((params) => {
         window.setTimeout(() => {
           void this.loadFromRoute(params.get('id'));
@@ -317,6 +331,22 @@ export class MyDrive {
       });
   }
 
+  loadStoragePlan(): void {
+    if (this.sharedDriveMode() || this.storagePlanLoading()) {
+      return;
+    }
+
+    this.storagePlanLoading.set(true);
+
+    this.planService
+      .currentPlan()
+      .pipe(finalize(() => this.storagePlanLoading.set(false)))
+      .subscribe({
+        next: (plan) => this.storagePlan.set(plan),
+        error: () => this.storagePlan.set(null),
+      });
+  }
+
   openFolder(folder: MyDriveFolder): void {
     if (this.loading()) {
       return;
@@ -324,7 +354,7 @@ export class MyDrive {
 
     this.closeActionMenu();
     this.closeNewMenu();
-    void this.router.navigate(['/my-drive/folders', folder.id]);
+    void this.router.navigate([this.folderRoutePrefix(), folder.id]);
   }
 
   openRootFolder(): void {
@@ -332,7 +362,7 @@ export class MyDrive {
       return;
     }
 
-    void this.router.navigate(['/my-drive']);
+    void this.router.navigate([this.sharedDriveMode() ? '/shared-with-me' : '/my-drive']);
   }
 
   openFolderPath(index: number): void {
@@ -344,11 +374,11 @@ export class MyDrive {
     const targetFolder = nextPath.at(-1) ?? null;
 
     if (targetFolder) {
-      void this.router.navigate(['/my-drive/folders', targetFolder.id]);
+      void this.router.navigate([this.folderRoutePrefix(), targetFolder.id]);
       return;
     }
 
-    void this.router.navigate(['/my-drive']);
+    void this.router.navigate([this.sharedDriveMode() ? '/shared-with-me' : '/my-drive']);
   }
 
   toggleNewMenu(event: MouseEvent): void {
@@ -436,6 +466,12 @@ export class MyDrive {
       return;
     }
 
+    if (this.storagePlan() && file.size > this.storagePlan()!.remainingStorageBytes) {
+      this.uploadError.set('ไม่สามารถอัปโหลดได้ พื้นที่จัดเก็บคงเหลือไม่พอ');
+      input.value = '';
+      return;
+    }
+
     this.uploading.set(true);
     this.uploadProgress.set(0);
     this.uploadProgressLabel.set(file.name);
@@ -466,10 +502,11 @@ export class MyDrive {
             this.loadSvgPreview(uploadedFile);
           }
           this.uploadProgress.set(100);
+          this.loadStoragePlan();
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
-        error: () => {
-          this.uploadError.set('ไม่สามารถอัปโหลดไฟล์ได้');
+        error: (error) => {
+          this.uploadError.set(error.error?.message || 'ไม่สามารถอัปโหลดไฟล์ได้');
         },
       });
   }
@@ -480,6 +517,13 @@ export class MyDrive {
     this.closeNewMenu();
 
     if (files.length === 0 || this.uploading()) {
+      return;
+    }
+
+    const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0);
+    if (this.storagePlan() && totalUploadSize > this.storagePlan()!.remainingStorageBytes) {
+      this.uploadError.set('ไม่สามารถอัปโหลดโฟลเดอร์ได้ พื้นที่จัดเก็บคงเหลือไม่พอ');
+      input.value = '';
       return;
     }
 
@@ -1698,10 +1742,12 @@ export class MyDrive {
 
     if (uploadedFiles.length > 0) {
       this.uploadMessage.set(`อัปโหลด ${uploadedFiles.length} ไฟล์สำเร็จ`);
+      this.loadStoragePlan();
     }
   }
 
   private async loadFromRoute(folderIdParam: string | null): Promise<void> {
+    this.sharedDriveMode.set(this.router.url.startsWith('/shared-with-me'));
     this.closeActionMenu();
     this.closeNewMenu();
     this.uploadMessage.set('');
@@ -1738,6 +1784,10 @@ export class MyDrive {
       this.files.set([]);
       this.folders.set([]);
     }
+  }
+
+  private folderRoutePrefix(): string {
+    return this.sharedDriveMode() ? '/shared-with-me/folders' : '/my-drive/folders';
   }
 
   private async buildFolderPath(folderId: number): Promise<FolderPathItem[]> {
@@ -1959,7 +2009,7 @@ export class MyDrive {
     }).format(date);
   }
 
-  private formatFileSize(sizeBytes: number): string {
+  formatFileSize(sizeBytes: number): string {
     if (sizeBytes < 1024) {
       return `${sizeBytes} B`;
     }

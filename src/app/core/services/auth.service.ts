@@ -22,6 +22,7 @@ interface ApiUser {
     last_name: string;
     email: string;
     email_verified: boolean;
+    has_password?: boolean;
     picture_path: string | null;
     phone: string | null;
 }
@@ -37,6 +38,7 @@ export interface User {
     lastName: string;
     email: string;
     emailVerified: boolean;
+    hasPassword: boolean;
     picturePath: string | null;
     phoneNumber: string;
 }
@@ -71,6 +73,16 @@ export interface UpdateProfileRequest {
 }
 
 export interface UpdateProfileResponse {
+    message: string;
+    user: User;
+}
+
+export interface SetPasswordRequest {
+    password: string;
+    confirmPassword: string;
+}
+
+export interface SetPasswordResponse {
     message: string;
     user: User;
 }
@@ -167,6 +179,25 @@ export class AuthService {
             );
     }
 
+    setPassword(data: SetPasswordRequest): Observable<SetPasswordResponse> {
+        return this.http
+            .patch<ApiAuthResponse>(
+                `${this.baseApiUrl}/me/password`,
+                {
+                    password: data.password,
+                    confirm_password: data.confirmPassword,
+                },
+                { withCredentials: true },
+            )
+            .pipe(
+                map((response) => this.normalizeAuthResponse(response)),
+                tap((response) => {
+                    this.currentUser.set(response.user);
+                    this.authChecked.set(true);
+                }),
+            );
+    }
+
     loadCurrentUser(): Observable<User | null> {
         return this.http
             .get<ApiUser>(
@@ -235,6 +266,7 @@ export class AuthService {
             lastName: user.last_name,
             email: user.email,
             emailVerified: user.email_verified,
+            hasPassword: user.has_password ?? false,
             picturePath: user.picture_path,
             phoneNumber: user.phone ?? '',
         };

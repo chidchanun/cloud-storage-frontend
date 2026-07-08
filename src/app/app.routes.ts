@@ -34,6 +34,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'plans',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/plans/plans').then((module) => module.Plans),
+  },
+  {
     path: 'trash',
     canActivate: [authGuard],
     loadComponent: () => import('./features/trash/trash').then((module) => module.Trash),
@@ -43,6 +48,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/shared-with-me/shared-with-me').then((module) => module.SharedWithMe),
+  },
+  {
+    path: 'shared-with-me/folders/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/my-drive/my-drive').then((module) => module.MyDrive),
   },
   {
     path: 'login',

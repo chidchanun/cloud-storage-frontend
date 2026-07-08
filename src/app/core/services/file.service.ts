@@ -1,6 +1,6 @@
 import { HttpClient, HttpEventType, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { filter, map, Observable } from 'rxjs';
+import { filter, map, Observable, Subscription } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
@@ -18,6 +18,11 @@ interface ApiUserFile {
 interface ApiUploadFileResponse {
   message: string;
   file: ApiUserFile;
+}
+
+interface ApiStartChunkUploadResponse {
+  upload_id: string;
+  chunk_size: number;
 }
 
 interface ApiListFilesResponse {
@@ -558,42 +563,79 @@ export class FileService {
   }
 
   uploadWithProgress(file: File, folderId?: number | null): Observable<UploadProgressEvent> {
-    const formData = this.buildUploadFormData(file, folderId);
+    return new Observable<UploadProgressEvent>((observer) => {
+      const subscriptions = new Subscription();
+      let uploadedBytes = 0;
 
-    return this.http
-      .post<ApiUploadFileResponse>(this.apiUrl, formData, {
-        observe: 'events',
-        reportProgress: true,
-        withCredentials: true,
-      })
-      .pipe(
-        filter((event) => {
-          return (
-            event.type === HttpEventType.UploadProgress || event.type === HttpEventType.Response
-          );
-        }),
-        map((event): UploadProgressEvent => {
-          if (event.type === HttpEventType.UploadProgress) {
-            const total = event.total ?? file.size;
-            const progress = total > 0 ? Math.round((event.loaded / total) * 100) : 0;
+      const startSubscription = this.startChunkUpload(file, folderId).subscribe({
+        next: (session) => {
+          const chunkSize = session.chunk_size;
+          const totalChunks = Math.ceil(file.size / chunkSize);
+          let chunkIndex = 0;
 
-            return {
-              type: 'progress',
-              progress: Math.min(progress, 99),
-            };
-          }
+          const uploadNextChunk = (): void => {
+            if (chunkIndex >= totalChunks) {
+              const completeSubscription = this.completeChunkUpload(session.upload_id).subscribe({
+                next: (response) => {
+                  observer.next({
+                    type: 'complete',
+                    response: {
+                      message: response.message,
+                      file: this.normalizeFile(response.file),
+                    },
+                  });
+                  observer.complete();
+                },
+                error: (error) => observer.error(error),
+              });
 
-          const response = event.body as ApiUploadFileResponse;
+              subscriptions.add(completeSubscription);
+              return;
+            }
 
-          return {
-            type: 'complete',
-            response: {
-              message: response.message,
-              file: this.normalizeFile(response.file),
-            },
+            const chunkStart = chunkIndex * chunkSize;
+            const chunkEnd = Math.min(chunkStart + chunkSize, file.size);
+            const chunk = file.slice(chunkStart, chunkEnd);
+            const currentChunkIndex = chunkIndex;
+
+            const chunkSubscription = this
+              .uploadChunk(session.upload_id, currentChunkIndex, chunk)
+              .subscribe({
+                next: (chunkProgress) => {
+                  const currentChunkBytes = Math.round(chunk.size * (chunkProgress / 100));
+                  const progress = file.size > 0
+                    ? Math.round(((uploadedBytes + currentChunkBytes) / file.size) * 100)
+                    : 0;
+
+                  observer.next({
+                    type: 'progress',
+                    progress: Math.min(progress, 99),
+                  });
+                },
+                error: (error) => observer.error(error),
+                complete: () => {
+                  uploadedBytes += chunk.size;
+                  chunkIndex += 1;
+                  observer.next({
+                    type: 'progress',
+                    progress: Math.min(Math.round((uploadedBytes / file.size) * 100), 99),
+                  });
+                  uploadNextChunk();
+                },
+              });
+
+            subscriptions.add(chunkSubscription);
           };
-        }),
-      );
+
+          uploadNextChunk();
+        },
+        error: (error) => observer.error(error),
+      });
+
+      subscriptions.add(startSubscription);
+
+      return () => subscriptions.unsubscribe();
+    });
   }
 
   download(fileId: number): Observable<Blob> {
@@ -612,6 +654,60 @@ export class FileService {
     }
 
     return formData;
+  }
+
+  private startChunkUpload(
+    file: File,
+    folderId?: number | null,
+  ): Observable<ApiStartChunkUploadResponse> {
+    return this.http.post<ApiStartChunkUploadResponse>(
+      `${this.apiUrl}/chunk-upload/start`,
+      {
+        original_name: file.name,
+        size_bytes: file.size,
+        folder_id: folderId ?? null,
+      },
+      { withCredentials: true },
+    );
+  }
+
+  private uploadChunk(
+    uploadId: string,
+    chunkIndex: number,
+    chunk: Blob,
+  ): Observable<number> {
+    const formData = new FormData();
+    formData.append('chunk', chunk, `chunk-${chunkIndex}`);
+
+    return this.http
+      .post(`${this.apiUrl}/chunk-upload/${uploadId}/chunks/${chunkIndex}`, formData, {
+        observe: 'events',
+        reportProgress: true,
+        withCredentials: true,
+      })
+      .pipe(
+        filter((event) => {
+          return (
+            event.type === HttpEventType.UploadProgress || event.type === HttpEventType.Response
+          );
+        }),
+        map((event) => {
+          if (event.type === HttpEventType.UploadProgress) {
+            const total = event.total ?? chunk.size;
+            return total > 0 ? Math.round((event.loaded / total) * 100) : 0;
+          }
+
+          return 100;
+        }),
+      );
+  }
+
+  private completeChunkUpload(uploadId: string): Observable<ApiUploadFileResponse> {
+    return this.http.post<ApiUploadFileResponse>(
+      `${this.apiUrl}/chunk-upload/${uploadId}/complete`,
+      {},
+      { withCredentials: true },
+    );
   }
 
   private normalizeSharedFile(sharedFile: ApiSharedFile): SharedFile {

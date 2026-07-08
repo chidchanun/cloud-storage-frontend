@@ -1,9 +1,10 @@
-<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+﻿<main class="min-h-dvh bg-[#F8FAFC] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
   <div class="grid min-h-dvh grid-cols-[280px_minmax(0,1fr)] max-lg:grid-cols-1">
     <app-sidebar
       uploadTargetId="myDriveFileUpload"
       [uploadText]="uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'"
       [uploadBusy]="uploading()"
+      [showUpload]="!sharedDriveMode()"
     />
 
     <section class="min-w-0">
@@ -21,7 +22,7 @@
                 (click)="openRootFolder()"
                 class="cursor-pointer font-bold text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-cyan-300"
               >
-                ไฟล์ของฉัน
+                {{ sharedDriveMode() ? 'แชร์กับฉัน' : 'ไฟล์ของฉัน' }}
               </button>
               @for (folder of folderPath(); track folder.id; let index = $index) {
                 <svg lucideChevronRight aria-hidden="true" class="h-4 w-4"></svg>
@@ -41,21 +42,23 @@
               >
                 <svg lucideFolder aria-hidden="true" class="h-6 w-6"></svg>
               </span>
-              ไฟล์ของฉัน
+              {{ sharedDriveMode() ? 'แชร์กับฉัน' : 'ไฟล์ของฉัน' }}
             </h1>
           </div>
 
           <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
-              (click)="toggleNewMenu($event)"
-              class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.18)] hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
-            >
-              <svg lucidePlus aria-hidden="true" class="h-5 w-5"></svg>
-              ใหม่
-            </button>
+            @if (!sharedDriveMode()) {
+              <button
+                type="button"
+                (click)="toggleNewMenu($event)"
+                class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white shadow-[0_12px_24px_rgba(37,99,235,0.18)] hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+              >
+                <svg lucidePlus aria-hidden="true" class="h-5 w-5"></svg>
+                ใหม่
+              </button>
+            }
 
-            @if (newMenuOpen()) {
+            @if (!sharedDriveMode() && newMenuOpen()) {
               <div
                 data-drive-menu
                 class="fixed z-50 w-56 overflow-hidden rounded-xl border border-blue-100 bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900"
@@ -87,34 +90,36 @@
               </div>
             }
 
-            <label
-              for="myDriveFileUpload"
-              class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300"
-            >
-              <svg
-                lucideUpload
-                aria-hidden="true"
-                class="h-5 w-5"
-                [class.animate-bounce]="uploading()"
-              ></svg>
-              {{ uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลด' }}
-            </label>
-            <input
-              id="myDriveFileUpload"
-              type="file"
-              class="sr-only"
-              [disabled]="uploading()"
-              (change)="uploadFile($event)"
-            />
-            <input
-              id="myDriveFolderUpload"
-              type="file"
-              class="sr-only"
-              [disabled]="uploading()"
-              multiple
-              [attr.webkitdirectory]="true"
-              (change)="uploadFolder($event)"
-            />
+            @if (!sharedDriveMode()) {
+              <label
+                for="myDriveFileUpload"
+                class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-extrabold text-slate-700 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:text-cyan-300"
+              >
+                <svg
+                  lucideUpload
+                  aria-hidden="true"
+                  class="h-5 w-5"
+                  [class.animate-bounce]="uploading()"
+                ></svg>
+                {{ uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลด' }}
+              </label>
+              <input
+                id="myDriveFileUpload"
+                type="file"
+                class="sr-only"
+                [disabled]="uploading()"
+                (change)="uploadFile($event)"
+              />
+              <input
+                id="myDriveFolderUpload"
+                type="file"
+                class="sr-only"
+                [disabled]="uploading()"
+                multiple
+                [attr.webkitdirectory]="true"
+                (change)="uploadFolder($event)"
+              />
+            }
 
             <button
               type="button"

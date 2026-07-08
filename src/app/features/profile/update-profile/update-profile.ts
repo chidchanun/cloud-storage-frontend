@@ -17,6 +17,9 @@ import {
   LucideArrowLeft,
   LucideCamera,
   LucideCheck,
+  LucideEye,
+  LucideEyeOff,
+  LucideLockKeyhole,
   LucideLoaderCircle,
   LucideMail,
   LucidePhone,
@@ -50,6 +53,9 @@ type ProfileFormValue = {
     LucideArrowLeft,
     LucideCamera,
     LucideCheck,
+    LucideEye,
+    LucideEyeOff,
+    LucideLockKeyhole,
     LucideLoaderCircle,
     LucideMail,
     LucidePhone,
@@ -70,8 +76,13 @@ export class UpdateProfile implements OnDestroy {
   readonly currentUser = this.authService.currentUser;
   readonly saving = signal(false);
   readonly uploadingPicture = signal(false);
+  readonly settingPassword = signal(false);
+  readonly showPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly passwordMessage = signal('');
+  readonly passwordError = signal('');
   readonly pictureMessage = signal('');
   readonly pictureError = signal('');
   readonly picturePreviewUrl = signal<string | null>(null);
@@ -103,6 +114,19 @@ export class UpdateProfile implements OnDestroy {
         Validators.pattern(/^[0-9+()\-\s]+$/),
       ],
     ],
+  });
+
+  readonly passwordForm = this.formBuilder.group({
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.maxLength(64),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,64}$/),
+      ],
+    ],
+    confirmPassword: ['', [Validators.required]],
   });
 
   readonly initials = computed(() => {
@@ -213,6 +237,54 @@ export class UpdateProfile implements OnDestroy {
     this.profileForm.markAsUntouched();
     this.successMessage.set('');
     this.errorMessage.set('');
+  }
+
+  togglePassword(): void {
+    this.showPassword.update((value) => !value);
+  }
+
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword.update((value) => !value);
+  }
+
+  setPassword(): void {
+    this.passwordMessage.set('');
+    this.passwordError.set('');
+
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.passwordForm.getRawValue();
+
+    if (value.password !== value.confirmPassword) {
+      this.passwordForm.controls.confirmPassword.setErrors({ passwordMismatch: true });
+      this.passwordForm.controls.confirmPassword.markAsTouched();
+      return;
+    }
+
+    this.settingPassword.set(true);
+
+    this.authService
+      .setPassword({
+        password: value.password,
+        confirmPassword: value.confirmPassword,
+      })
+      .pipe(finalize(() => this.settingPassword.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.passwordForm.reset();
+          this.passwordForm.markAsPristine();
+          this.passwordForm.markAsUntouched();
+          this.passwordMessage.set(response.message || 'ตั้งรหัสผ่านเรียบร้อยแล้ว');
+        },
+        error: (error: HttpErrorResponse) => {
+          this.passwordError.set(
+            this.readApiMessage(error, 'ไม่สามารถตั้งรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง'),
+          );
+        },
+      });
   }
 
   selectProfilePicture(event: Event): void {
@@ -331,6 +403,37 @@ export class UpdateProfile implements OnDestroy {
     }
 
     return '';
+  }
+
+  passwordFieldError(field: 'password' | 'confirmPassword'): string {
+    const control = this.passwordForm.controls[field];
+
+    if (control.hasError('required')) {
+      return 'กรุณากรอกรหัสผ่าน';
+    }
+
+    if (control.hasError('minlength')) {
+      return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+    }
+
+    if (control.hasError('maxlength')) {
+      return 'รหัสผ่านต้องไม่เกิน 64 ตัวอักษร';
+    }
+
+    if (control.hasError('pattern')) {
+      return 'ต้องมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ ตัวเลข อักขระพิเศษ และไม่มีช่องว่าง';
+    }
+
+    if (control.hasError('passwordMismatch')) {
+      return 'รหัสผ่านยืนยันไม่ตรงกัน';
+    }
+
+    return '';
+  }
+
+  isPasswordInvalid(field: 'password' | 'confirmPassword'): boolean {
+    const control = this.passwordForm.controls[field];
+    return control.invalid && (control.dirty || control.touched);
   }
 
   ngOnDestroy(): void {

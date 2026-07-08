@@ -1,4 +1,4 @@
-<aside
+﻿<aside
   class="flex h-full flex-col border-r border-blue-100 bg-white px-5 py-5 dark:border-slate-800 dark:bg-slate-900 max-lg:hidden"
 >
   <a
@@ -94,29 +94,42 @@
       <svg lucideTrash2 aria-hidden="true" class="h-5 w-5"></svg>
       ถังขยะ
     </a>
+    <a
+      class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-slate-600 no-underline hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+      routerLink="/plans"
+      routerLinkActive="bg-blue-50 !font-extrabold !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
+    >
+      <svg lucideCrown aria-hidden="true" class="h-5 w-5"></svg>
+      แพ็กเกจ
+    </a>
   </nav>
 
-  <div
-    class="mt-8 rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
-  >
-    <div class="mb-3 flex items-center gap-2 text-sm font-extrabold">
-      <svg
-        lucideHardDrive
-        aria-hidden="true"
-        class="h-5 w-5 text-blue-600 dark:text-cyan-300"
-      ></svg>
-      พื้นที่จัดเก็บ
+  @if (storagePlan()) {
+    <div
+      class="mt-8 rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+    >
+      <div class="mb-3 flex items-center gap-2 text-sm font-extrabold">
+        <svg
+          lucideHardDrive
+          aria-hidden="true"
+          class="h-5 w-5 text-blue-600 dark:text-cyan-300"
+        ></svg>
+        พื้นที่จัดเก็บ
+      </div>
+      <div class="h-2 overflow-hidden rounded-full bg-blue-100 dark:bg-slate-800">
+        <div
+          class="h-full rounded-full bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 transition-[width] duration-300"
+          [style.width.%]="storageUsagePercent()"
+        ></div>
+      </div>
+      <p class="m-0 mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+        ใช้ไป {{ formatFileSize(storagePlan()!.usedStorageBytes) }} จาก {{ formatFileSize(storagePlan()!.userPlan.storageLimitBytes) }}
+      </p>
+      <p class="m-0 mt-1 text-xs font-black text-blue-700 dark:text-cyan-300">
+        เหลือ {{ formatFileSize(storagePlan()!.remainingStorageBytes) }}
+      </p>
     </div>
-    <div class="h-2 overflow-hidden rounded-full bg-blue-100 dark:bg-slate-800">
-      <div
-        class="h-full w-[18%] rounded-full bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400"
-      ></div>
-    </div>
-    <p class="m-0 mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
-      ใช้ไป 1.8 GB จาก 10 GB
-    </p>
-  </div>
-  <a
+  }  <a
     class="mt-auto flex min-h-12 items-center gap-3 rounded-xl border border-blue-100 bg-white px-3 text-sm font-extrabold text-slate-700 no-underline shadow-sm shadow-blue-900/5 transition hover:bg-blue-50 hover:text-blue-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:shadow-none dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
     routerLink="/profile"
     hidden
@@ -132,7 +145,7 @@
 </aside>
 
 <nav
-  class="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-blue-100 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 shadow-[0_-14px_34px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+  class="fixed inset-x-0 bottom-0 z-50 grid grid-cols-6 border-t border-blue-100 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] pt-2 shadow-[0_-14px_34px_rgba(15,23,42,0.12)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
   aria-label="Mobile navigation"
 >
   <a
@@ -175,5 +188,13 @@
   >
     <svg lucideUser aria-hidden="true" class="h-5 w-5"></svg>
     โปรไฟล์
+  </a>
+  <a
+    class="grid min-h-14 place-items-center gap-1 rounded-lg px-1 text-[0.68rem] font-black text-slate-500 no-underline hover:bg-blue-50 hover:text-blue-700 dark:text-slate-400 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+    routerLink="/plans"
+    routerLinkActive="bg-blue-50 !text-blue-700 dark:bg-cyan-300/10 dark:!text-cyan-300"
+  >
+    <svg lucideCrown aria-hidden="true" class="h-5 w-5"></svg>
+    แพ็กเกจ
   </a>
 </nav>

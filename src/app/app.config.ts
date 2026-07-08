@@ -3,7 +3,6 @@ import { provideRouter } from '@angular/router';
 
 import {
   provideHttpClient,
-  withFetch,
   withInterceptors,
 } from '@angular/common/http';
 
@@ -17,7 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
 
     provideHttpClient(
-      withFetch(),
+      // Use the default XHR backend so HttpClient can emit UploadProgress events.
       withInterceptors([
         credentialsInterceptor,
       ]),
