@@ -181,6 +181,10 @@ export type UploadProgressEvent =
   | {
       type: 'progress';
       progress: number;
+      uploadedBytes: number;
+      totalBytes: number;
+      speedBytesPerSecond: number;
+      speedLabel: string;
     }
   | {
       type: 'complete';
@@ -566,6 +570,7 @@ export class FileService {
     return new Observable<UploadProgressEvent>((observer) => {
       const subscriptions = new Subscription();
       let uploadedBytes = 0;
+      const uploadStartedAt = performance.now();
 
       const startSubscription = this.startChunkUpload(file, folderId).subscribe({
         next: (session) => {
@@ -606,19 +611,36 @@ export class FileService {
                   const progress = file.size > 0
                     ? Math.round(((uploadedBytes + currentChunkBytes) / file.size) * 100)
                     : 0;
+                  const currentUploadedBytes = uploadedBytes + currentChunkBytes;
+                  const speedBytesPerSecond = this.calculateUploadSpeed(
+                    currentUploadedBytes,
+                    uploadStartedAt,
+                  );
 
                   observer.next({
                     type: 'progress',
                     progress: Math.min(progress, 99),
+                    uploadedBytes: currentUploadedBytes,
+                    totalBytes: file.size,
+                    speedBytesPerSecond,
+                    speedLabel: this.formatUploadSpeed(speedBytesPerSecond),
                   });
                 },
                 error: (error) => observer.error(error),
                 complete: () => {
                   uploadedBytes += chunk.size;
                   chunkIndex += 1;
+                  const speedBytesPerSecond = this.calculateUploadSpeed(
+                    uploadedBytes,
+                    uploadStartedAt,
+                  );
                   observer.next({
                     type: 'progress',
                     progress: Math.min(Math.round((uploadedBytes / file.size) * 100), 99),
+                    uploadedBytes,
+                    totalBytes: file.size,
+                    speedBytesPerSecond,
+                    speedLabel: this.formatUploadSpeed(speedBytesPerSecond),
                   });
                   uploadNextChunk();
                 },
@@ -708,6 +730,31 @@ export class FileService {
       {},
       { withCredentials: true },
     );
+  }
+
+  private calculateUploadSpeed(uploadedBytes: number, startedAt: number): number {
+    const elapsedSeconds = Math.max((performance.now() - startedAt) / 1000, 0.1);
+
+    return uploadedBytes / elapsedSeconds;
+  }
+
+  private formatUploadSpeed(bytesPerSecond: number): string {
+    if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0) {
+      return '0 KB/s';
+    }
+
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    let speed = bytesPerSecond;
+    let unitIndex = 0;
+
+    while (speed >= 1024 && unitIndex < units.length - 1) {
+      speed /= 1024;
+      unitIndex += 1;
+    }
+
+    const fractionDigits = speed >= 10 || unitIndex === 0 ? 0 : 1;
+
+    return `${speed.toFixed(fractionDigits)} ${units[unitIndex]}`;
   }
 
   private normalizeSharedFile(sharedFile: ApiSharedFile): SharedFile {

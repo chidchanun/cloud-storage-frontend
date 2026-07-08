@@ -162,6 +162,11 @@
               <span class="truncate">{{ uploadProgressLabel() || 'กำลังอัปโหลดไฟล์' }}</span>
               <span>{{ uploadProgress() }}%</span>
             </div>
+            @if (uploadSpeedLabel()) {
+              <p class="mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                ความเร็ว {{ uploadSpeedLabel() }}
+              </p>
+            }
             <div class="h-2 overflow-hidden rounded-full bg-blue-50 dark:bg-slate-800">
               <div
                 class="h-full rounded-full bg-blue-600 transition-[width] duration-200 dark:bg-cyan-300"

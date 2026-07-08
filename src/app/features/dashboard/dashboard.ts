@@ -125,6 +125,7 @@ export class Dashboard implements OnDestroy {
   readonly uploading = signal(false);
   readonly uploadProgress = signal(0);
   readonly uploadProgressLabel = signal('');
+  readonly uploadSpeedLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
   readonly storagePlan = signal<UserStoragePlan | null>(null);
@@ -502,6 +503,7 @@ export class Dashboard implements OnDestroy {
     this.uploading.set(true);
     this.uploadProgress.set(0);
     this.uploadProgressLabel.set(file.name);
+    this.uploadSpeedLabel.set('');
     this.uploadError.set('');
     this.uploadMessage.set('');
 
@@ -511,6 +513,7 @@ export class Dashboard implements OnDestroy {
           this.uploading.set(false);
           this.uploadProgress.set(0);
           this.uploadProgressLabel.set('');
+          this.uploadSpeedLabel.set('');
           input.value = '';
         }),
       )
@@ -518,6 +521,7 @@ export class Dashboard implements OnDestroy {
         next: (event) => {
           if (event.type === 'progress') {
             this.uploadProgress.set(event.progress);
+            this.uploadSpeedLabel.set(event.speedLabel);
             return;
           }
 
@@ -530,6 +534,7 @@ export class Dashboard implements OnDestroy {
           this.loadImagePreviews([uploadedFile]);
           this.loadFilesError.set('');
           this.uploadProgress.set(100);
+          this.uploadSpeedLabel.set('');
           this.loadStoragePlan();
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },

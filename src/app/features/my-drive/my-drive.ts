@@ -161,6 +161,7 @@ export class MyDrive {
   readonly uploading = signal(false);
   readonly uploadProgress = signal(0);
   readonly uploadProgressLabel = signal('');
+  readonly uploadSpeedLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
   readonly storagePlan = signal<UserStoragePlan | null>(null);
@@ -475,6 +476,7 @@ export class MyDrive {
     this.uploading.set(true);
     this.uploadProgress.set(0);
     this.uploadProgressLabel.set(file.name);
+    this.uploadSpeedLabel.set('');
     this.uploadMessage.set('');
     this.uploadError.set('');
 
@@ -485,6 +487,7 @@ export class MyDrive {
           this.uploading.set(false);
           this.uploadProgress.set(0);
           this.uploadProgressLabel.set('');
+          this.uploadSpeedLabel.set('');
           input.value = '';
         }),
       )
@@ -492,6 +495,7 @@ export class MyDrive {
         next: (event) => {
           if (event.type === 'progress') {
             this.uploadProgress.set(event.progress);
+            this.uploadSpeedLabel.set(event.speedLabel);
             return;
           }
 
@@ -502,6 +506,7 @@ export class MyDrive {
             this.loadSvgPreview(uploadedFile);
           }
           this.uploadProgress.set(100);
+          this.uploadSpeedLabel.set('');
           this.loadStoragePlan();
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
@@ -533,6 +538,8 @@ export class MyDrive {
     this.uploadMessage.set('');
     this.uploadError.set('');
 
+    this.uploadSpeedLabel.set('');
+
     const fileProgress = new Map<string, number>();
     const uploadedFiles: MyDriveFile[] = [];
     let finishedCount = 0;
@@ -546,6 +553,7 @@ export class MyDrive {
         next: (event) => {
           if (event.type === 'progress') {
             fileProgress.set(progressKey, event.progress);
+            this.uploadSpeedLabel.set(event.speedLabel);
             this.updateFolderUploadProgress(fileProgress, files.length, finishedCount);
             return;
           }
@@ -1727,6 +1735,7 @@ export class MyDrive {
     this.uploading.set(false);
     this.uploadProgress.set(0);
     this.uploadProgressLabel.set('');
+    this.uploadSpeedLabel.set('');
     input.value = '';
 
     if (uploadedFiles.length > 0) {
