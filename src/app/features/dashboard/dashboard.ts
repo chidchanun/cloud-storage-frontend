@@ -30,11 +30,12 @@ import {
   LucideRefreshCw,
   LucideSearch,
   LucideSettings,
+  LucideStar,
   LucideTrash2,
   LucideUpload,
   LucideX,
 } from '@lucide/angular';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -102,6 +103,7 @@ const fileViewModeStorageKey = 'anucloud:file-view-mode';
     LucideRefreshCw,
     LucideSearch,
     LucideSettings,
+    LucideStar,
     LucideTrash2,
     LucideUpload,
     LucideX,
@@ -154,6 +156,10 @@ export class Dashboard implements OnDestroy {
     left: 0,
   });
   readonly moveMessage = signal('');
+  readonly starringFileId = signal<number | null>(null);
+  readonly starredFileIds = signal<Set<number>>(new Set());
+  readonly starMessage = signal('');
+  readonly starError = signal('');
   readonly loggingOut = signal(false);
   readonly fileViewMode = signal<FileViewMode>('list');
   readonly isMobileView = signal(false);
@@ -218,13 +224,17 @@ export class Dashboard implements OnDestroy {
     this.loadingFiles.set(true);
     this.loadFilesError.set('');
 
-    this.fileService.list()
+    forkJoin({
+      files: this.fileService.list(),
+      starredFiles: this.fileService.starredFiles(),
+    })
       .pipe(finalize(() => this.loadingFiles.set(false)))
       .subscribe({
-        next: (files) => {
+        next: ({ files, starredFiles }) => {
           const driveFiles = files.map((file) => this.toDriveFile(file));
 
           this.revokeFilePreviews();
+          this.starredFileIds.set(new Set(starredFiles.map((file) => file.id)));
           this.files.set(driveFiles);
           this.loadImagePreviews(driveFiles);
         },
@@ -284,17 +294,50 @@ export class Dashboard implements OnDestroy {
     this.downloadMessage.set('');
     this.downloadError.set('');
 
-    this.fileService.download(file.id)
-      .pipe(finalize(() => this.downloadingFileId.set(null)))
+    this.openDownloadUrl(file.id, file.name);
+    this.downloadMessage.set('เริ่มดาวน์โหลดไฟล์แล้ว');
+    window.setTimeout(() => this.downloadingFileId.set(null), 1000);
+  }
+
+  toggleFileStar(file: DriveFile): void {
+    if (this.starringFileId() !== null) {
+      return;
+    }
+
+    const nextStarred = !this.isFileStarred(file.id);
+
+    this.closeActionMenu();
+    this.starringFileId.set(file.id);
+    this.starMessage.set('');
+    this.starError.set('');
+
+    const request = nextStarred ? this.fileService.star(file.id) : this.fileService.unstar(file.id);
+
+    request
+      .pipe(finalize(() => this.starringFileId.set(null)))
       .subscribe({
-        next: (blob) => {
-          this.saveBlob(blob, file.name);
-          this.downloadMessage.set('ดาวน์โหลดไฟล์สำเร็จ');
+        next: () => {
+          this.starredFileIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+
+            if (nextStarred) {
+              nextIds.add(file.id);
+            } else {
+              nextIds.delete(file.id);
+            }
+
+            return nextIds;
+          });
+          this.starMessage.set(nextStarred ? 'เพิ่มในรายการโปรดแล้ว' : 'นำออกจากรายการโปรดแล้ว');
         },
         error: () => {
-          this.downloadError.set('ไม่สามารถดาวน์โหลดไฟล์ได้');
+          this.starError.set('ไม่สามารถอัปเดตรายการโปรดได้');
         },
       });
+  }
+
+  isFileStarred(fileId: number): boolean {
+    return this.starredFileIds().has(fileId);
   }
 
   deleteFile(file: DriveFile): void {
@@ -333,6 +376,11 @@ export class Dashboard implements OnDestroy {
         next: () => {
           this.revokeFilePreview(file.id);
           this.files.update((files) => files.filter((item) => item.id !== file.id));
+          this.starredFileIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+            nextIds.delete(file.id);
+            return nextIds;
+          });
           this.deleteMessage.set('ลบไฟล์สำเร็จ');
           this.deleteTarget.set(null);
         },
@@ -642,6 +690,17 @@ export class Dashboard implements OnDestroy {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  }
+
+  private openDownloadUrl(fileId: number, fileName: string): void {
+    const link = document.createElement('a');
+
+    link.href = this.fileService.downloadUrl(fileId);
+    link.download = fileName;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   private loadImagePreviews(files: DriveFile[]): void {

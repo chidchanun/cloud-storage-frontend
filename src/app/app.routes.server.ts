@@ -30,6 +30,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'starred',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'shared-with-me',
     renderMode: RenderMode.Server,
   },

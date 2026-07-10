@@ -105,6 +105,12 @@
         @if (downloadError()) {
         <p class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ downloadError() }}</p>
         }
+        @if (starMessage()) {
+        <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ starMessage() }}</p>
+        }
+        @if (starError()) {
+        <p class="m-0 rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-bold text-violet-700 dark:border-cyan-300/20 dark:bg-cyan-300/10 dark:text-cyan-200">{{ starError() }}</p>
+        }
         @if (deleteMessage()) {
         <p class="m-0 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-300/10 dark:text-emerald-200">{{ deleteMessage() }}</p>
         }
@@ -261,7 +267,12 @@
                   </div>
 
                   <div class="p-4">
-                    <h3 class="m-0 truncate text-sm font-black" [title]="file.name">{{ file.name }}</h3>
+                    <h3 class="m-0 flex min-w-0 items-center gap-2 text-sm font-black" [title]="file.name">
+                      <span class="truncate">{{ file.name }}</span>
+                      @if (isFileStarred(file.id)) {
+                      <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                      }
+                    </h3>
                     <div class="mt-3 grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
                       <span>{{ file.size }}</span>
                       <span>{{ file.updatedAt }}</span>
@@ -276,6 +287,10 @@
                     <button type="button" (click)="downloadFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
                       <svg lucideDownload aria-hidden="true" class="h-4 w-4" [class.animate-bounce]="downloadingFileId() === file.id"></svg>
                       ดาวน์โหลด
+                    </button>
+                    <button type="button" (click)="toggleFileStar(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
+                      <svg lucideStar aria-hidden="true" class="h-4 w-4" [class.fill-amber-400]="isFileStarred(file.id)" [class.text-amber-400]="isFileStarred(file.id)" [class.animate-pulse]="starringFileId() === file.id"></svg>
+                      {{ isFileStarred(file.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
                     </button>
                     <button type="button" (click)="openRenameDialog(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
                       <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
@@ -376,7 +391,12 @@
                             }
                             }
                           </div>
-                          <span class="font-extrabold">{{ file.name }}</span>
+                          <span class="flex min-w-0 items-center gap-2 font-extrabold">
+                            <span class="truncate">{{ file.name }}</span>
+                            @if (isFileStarred(file.id)) {
+                            <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                            }
+                          </span>
                         </div>
                       </td>
                       <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{{ file.owner }}</td>
@@ -400,6 +420,10 @@
                           <button type="button" (click)="downloadFile(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
                             <svg lucideDownload aria-hidden="true" class="h-4 w-4" [class.animate-bounce]="downloadingFileId() === file.id"></svg>
                             ดาวน์โหลด
+                          </button>
+                          <button type="button" (click)="toggleFileStar(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
+                            <svg lucideStar aria-hidden="true" class="h-4 w-4" [class.fill-amber-400]="isFileStarred(file.id)" [class.text-amber-400]="isFileStarred(file.id)" [class.animate-pulse]="starringFileId() === file.id"></svg>
+                            {{ isFileStarred(file.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
                           </button>
                           <button type="button" (click)="openRenameDialog(file)" class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300">
                             <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>

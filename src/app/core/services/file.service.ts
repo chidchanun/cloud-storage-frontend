@@ -4,6 +4,8 @@ import { filter, map, Observable, Subscription } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
+const parallelChunkUploads = 3;
+
 interface ApiUserFile {
   id: number;
   folder_id?: number | null;
@@ -42,6 +44,30 @@ interface ApiListTrashFilesResponse {
   message: string;
   files: ApiUserFile[];
   total: number;
+}
+
+interface ApiStarredFile {
+  star_id: number;
+  file_id: number;
+  folder_id?: number | null;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  file_created_at: string;
+  file_updated_at: string;
+  starred_at: string;
+}
+
+interface ApiListStarredFilesResponse {
+  message: string;
+  files: ApiStarredFile[];
+  total: number;
+}
+
+interface ApiFileStarResponse {
+  message: string;
+  file_id?: number;
+  is_starred: boolean;
 }
 
 interface ApiListSharedWithMeResponse {
@@ -170,6 +196,11 @@ export interface UserFile {
   checksumSha256?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StarredFile extends UserFile {
+  starId: number;
+  starredAt: string;
 }
 
 export interface UploadFileResponse {
@@ -358,6 +389,32 @@ export class FileService {
     return this.http
       .get<ApiListTrashFilesResponse>(this.apiTrashUrl, { withCredentials: true })
       .pipe(map((response) => response.files.map((file) => this.normalizeFile(file))));
+  }
+
+  starredFiles(): Observable<StarredFile[]> {
+    return this.http
+      .get<ApiListStarredFilesResponse>(`${this.apiUrl}/starred`, { withCredentials: true })
+      .pipe(map((response) => response.files.map((file) => this.normalizeStarredFile(file))));
+  }
+
+  star(fileId: number): Observable<ApiFileStarResponse> {
+    return this.http.post<ApiFileStarResponse>(
+      `${this.apiUrl}/${fileId}/star`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  unstar(fileId: number): Observable<ApiFileStarResponse> {
+    return this.http.delete<ApiFileStarResponse>(`${this.apiUrl}/${fileId}/star`, {
+      withCredentials: true,
+    });
+  }
+
+  checkStar(fileId: number): Observable<boolean> {
+    return this.http
+      .get<ApiFileStarResponse>(`${this.apiUrl}/${fileId}/star`, { withCredentials: true })
+      .pipe(map((response) => response.is_starred));
   }
 
   sharedWithMe(): Observable<SharedWithMeFile[]> {
@@ -569,87 +626,117 @@ export class FileService {
   uploadWithProgress(file: File, folderId?: number | null): Observable<UploadProgressEvent> {
     return new Observable<UploadProgressEvent>((observer) => {
       const subscriptions = new Subscription();
-      let uploadedBytes = 0;
-      const uploadStartedAt = performance.now();
+      const speedSamples: Array<{ at: number; bytes: number }> = [
+        {
+          at: performance.now(),
+          bytes: 0,
+        },
+      ];
 
       const startSubscription = this.startChunkUpload(file, folderId).subscribe({
         next: (session) => {
           const chunkSize = session.chunk_size;
           const totalChunks = Math.ceil(file.size / chunkSize);
-          let chunkIndex = 0;
+          const chunkProgressBytes = new Map<number, number>();
+          let nextChunkIndex = 0;
+          let completedChunks = 0;
+          let activeChunks = 0;
+          let uploadFailed = false;
 
-          const uploadNextChunk = (): void => {
-            if (chunkIndex >= totalChunks) {
-              const completeSubscription = this.completeChunkUpload(session.upload_id).subscribe({
-                next: (response) => {
-                  observer.next({
-                    type: 'complete',
-                    response: {
-                      message: response.message,
-                      file: this.normalizeFile(response.file),
-                    },
-                  });
-                  observer.complete();
-                },
-                error: (error) => observer.error(error),
-              });
+          const emitProgress = (): void => {
+            const currentUploadedBytes = Array.from(chunkProgressBytes.values()).reduce(
+              (sum, bytes) => sum + bytes,
+              0,
+            );
+            const progress = file.size > 0
+              ? Math.round((currentUploadedBytes / file.size) * 100)
+              : 0;
+            const speedBytesPerSecond = this.calculateRealtimeUploadSpeed(
+              speedSamples,
+              currentUploadedBytes,
+            );
 
-              subscriptions.add(completeSubscription);
+            observer.next({
+              type: 'progress',
+              progress: Math.min(progress, 99),
+              uploadedBytes: currentUploadedBytes,
+              totalBytes: file.size,
+              speedBytesPerSecond,
+              speedLabel: this.formatUploadSpeed(speedBytesPerSecond),
+            });
+          };
+
+          const completeUpload = (): void => {
+            if (uploadFailed) {
               return;
             }
 
+            uploadFailed = true;
+
+            const completeSubscription = this.completeChunkUpload(session.upload_id).subscribe({
+              next: (response) => {
+                observer.next({
+                  type: 'complete',
+                  response: {
+                    message: response.message,
+                    file: this.normalizeFile(response.file),
+                  },
+                });
+                observer.complete();
+              },
+              error: (error) => observer.error(error),
+            });
+
+            subscriptions.add(completeSubscription);
+          };
+
+          const uploadNextChunks = (): void => {
+            if (uploadFailed) {
+              return;
+            }
+
+            if (completedChunks >= totalChunks) {
+              completeUpload();
+              return;
+            }
+
+            while (activeChunks < parallelChunkUploads && nextChunkIndex < totalChunks) {
+              uploadChunkAtIndex(nextChunkIndex);
+              nextChunkIndex += 1;
+            }
+          };
+
+          const uploadChunkAtIndex = (chunkIndex: number): void => {
             const chunkStart = chunkIndex * chunkSize;
             const chunkEnd = Math.min(chunkStart + chunkSize, file.size);
             const chunk = file.slice(chunkStart, chunkEnd);
-            const currentChunkIndex = chunkIndex;
+            activeChunks += 1;
 
             const chunkSubscription = this
-              .uploadChunk(session.upload_id, currentChunkIndex, chunk)
+              .uploadChunk(session.upload_id, chunkIndex, chunk)
               .subscribe({
                 next: (chunkProgress) => {
                   const currentChunkBytes = Math.round(chunk.size * (chunkProgress / 100));
-                  const progress = file.size > 0
-                    ? Math.round(((uploadedBytes + currentChunkBytes) / file.size) * 100)
-                    : 0;
-                  const currentUploadedBytes = uploadedBytes + currentChunkBytes;
-                  const speedBytesPerSecond = this.calculateUploadSpeed(
-                    currentUploadedBytes,
-                    uploadStartedAt,
-                  );
-
-                  observer.next({
-                    type: 'progress',
-                    progress: Math.min(progress, 99),
-                    uploadedBytes: currentUploadedBytes,
-                    totalBytes: file.size,
-                    speedBytesPerSecond,
-                    speedLabel: this.formatUploadSpeed(speedBytesPerSecond),
-                  });
+                  chunkProgressBytes.set(chunkIndex, currentChunkBytes);
+                  emitProgress();
                 },
-                error: (error) => observer.error(error),
+                error: (error) => {
+                  uploadFailed = true;
+                  observer.error(error);
+                },
                 complete: () => {
-                  uploadedBytes += chunk.size;
-                  chunkIndex += 1;
-                  const speedBytesPerSecond = this.calculateUploadSpeed(
-                    uploadedBytes,
-                    uploadStartedAt,
-                  );
-                  observer.next({
-                    type: 'progress',
-                    progress: Math.min(Math.round((uploadedBytes / file.size) * 100), 99),
-                    uploadedBytes,
-                    totalBytes: file.size,
-                    speedBytesPerSecond,
-                    speedLabel: this.formatUploadSpeed(speedBytesPerSecond),
-                  });
-                  uploadNextChunk();
+                  chunkProgressBytes.set(chunkIndex, chunk.size);
+                  activeChunks -= 1;
+                  completedChunks += 1;
+                  emitProgress();
+                  uploadNextChunks();
                 },
               });
 
             subscriptions.add(chunkSubscription);
           };
 
-          uploadNextChunk();
+          uploadNextChunks();
         },
         error: (error) => observer.error(error),
       });
@@ -665,6 +752,10 @@ export class FileService {
       responseType: 'blob',
       withCredentials: true,
     });
+  }
+
+  downloadUrl(fileId: number): string {
+    return `${this.apiUrl}/${fileId}/download`;
   }
 
   private buildUploadFormData(file: File, folderId?: number | null): FormData {
@@ -732,10 +823,27 @@ export class FileService {
     );
   }
 
-  private calculateUploadSpeed(uploadedBytes: number, startedAt: number): number {
-    const elapsedSeconds = Math.max((performance.now() - startedAt) / 1000, 0.1);
+  private calculateRealtimeUploadSpeed(
+    samples: Array<{ at: number; bytes: number }>,
+    uploadedBytes: number,
+  ): number {
+    const now = performance.now();
+    const sampleWindowMs = 3000;
 
-    return uploadedBytes / elapsedSeconds;
+    samples.push({
+      at: now,
+      bytes: uploadedBytes,
+    });
+
+    while (samples.length > 2 && now - samples[0].at > sampleWindowMs) {
+      samples.shift();
+    }
+
+    const firstSample = samples[0];
+    const elapsedSeconds = Math.max((now - firstSample.at) / 1000, 0.1);
+    const transferredBytes = Math.max(uploadedBytes - firstSample.bytes, 0);
+
+    return transferredBytes / elapsedSeconds;
   }
 
   private formatUploadSpeed(bytesPerSecond: number): string {
@@ -831,6 +939,20 @@ export class FileService {
       checksumSha256: file.checksum_sha256,
       createdAt: file.created_at,
       updatedAt: file.updated_at,
+    };
+  }
+
+  private normalizeStarredFile(file: ApiStarredFile): StarredFile {
+    return {
+      id: file.file_id,
+      starId: file.star_id,
+      folderId: file.folder_id ?? null,
+      originalName: file.original_name,
+      mimeType: file.mime_type,
+      sizeBytes: file.size_bytes,
+      createdAt: file.file_created_at,
+      updatedAt: file.file_updated_at,
+      starredAt: file.starred_at,
     };
   }
 }

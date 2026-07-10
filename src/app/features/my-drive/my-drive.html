@@ -543,6 +543,9 @@
                         [title]="file.name"
                       >
                         {{ file.name }}
+                        @if (isFileStarred(file.id)) {
+                          <svg lucideStar aria-hidden="true" class="ml-1 inline h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                        }
                       </h3>
                       <div
                         class="mt-3 grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400"
@@ -572,6 +575,23 @@
                           ></svg>
                           ดาวน์โหลด
                         </button>
+                        @if (!sharedDriveMode()) {
+                          <button
+                            type="button"
+                            (click)="toggleFileStar(file)"
+                            class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                          >
+                            <svg
+                              lucideStar
+                              aria-hidden="true"
+                              class="h-4 w-4"
+                              [class.fill-amber-400]="isFileStarred(file.id)"
+                              [class.text-amber-400]="isFileStarred(file.id)"
+                              [class.animate-pulse]="starringFileId() === file.id"
+                            ></svg>
+                            {{ isFileStarred(file.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
+                          </button>
+                        }
                         <button
                           type="button"
                           (click)="openRenameDialog(file)"
@@ -864,7 +884,12 @@
                                 }
                               }
                             </div>
-                            <span class="font-extrabold">{{ file.name }}</span>
+                            <span class="flex min-w-0 items-center gap-2 font-extrabold">
+                              <span class="truncate">{{ file.name }}</span>
+                              @if (isFileStarred(file.id)) {
+                                <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                              }
+                            </span>
                           </div>
                         </td>
                         <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
@@ -909,6 +934,23 @@
                                 ></svg>
                                 ดาวน์โหลด
                               </button>
+                              @if (!sharedDriveMode()) {
+                                <button
+                                  type="button"
+                                  (click)="toggleFileStar(file)"
+                                  class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                                >
+                                  <svg
+                                    lucideStar
+                                    aria-hidden="true"
+                                    class="h-4 w-4"
+                                    [class.fill-amber-400]="isFileStarred(file.id)"
+                                    [class.text-amber-400]="isFileStarred(file.id)"
+                                    [class.animate-pulse]="starringFileId() === file.id"
+                                  ></svg>
+                                  {{ isFileStarred(file.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
+                                </button>
+                              }
                               <button
                                 type="button"
                                 (click)="openRenameDialog(file)"

@@ -27,6 +27,7 @@ import {
   LucidePlus,
   LucideRefreshCw,
   LucideShare2,
+  LucideStar,
   LucideTrash2,
   LucideUpload,
   LucideX,
@@ -135,6 +136,7 @@ const myDriveViewModeStorageKey = 'anucloud:my-drive-view-mode';
     LucidePlus,
     LucideRefreshCw,
     LucideShare2,
+    LucideStar,
     LucideTrash2,
     LucideUpload,
     LucideX,
@@ -215,6 +217,8 @@ export class MyDrive {
   readonly actionMessage = signal('');
   readonly actionError = signal('');
   readonly moveMessage = signal('');
+  readonly starringFileId = signal<number | null>(null);
+  readonly starredFileIds = signal<Set<number>>(new Set());
   readonly sharingFileId = signal<number | null>(null);
   readonly shareTarget = signal<ShareTarget | null>(null);
   readonly shareMode = signal<ShareMode>('user');
@@ -311,12 +315,14 @@ export class MyDrive {
     forkJoin({
       files: this.fileService.list(this.currentFolderId()),
       folders: this.folderService.list(this.currentFolderId()),
+      starredFiles: this.sharedDriveMode() ? of([]) : this.fileService.starredFiles(),
     })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ files, folders }) => {
+        next: ({ files, folders, starredFiles }) => {
           this.clearSvgPreviewUrls();
           this.folders.set(folders.map((folder) => this.toMyDriveFolder(folder)));
+          this.starredFileIds.set(new Set(starredFiles.map((file) => file.id)));
           const nextFiles = files.map((file) => this.toMyDriveFile(file));
 
           this.files.set(nextFiles);
@@ -597,6 +603,11 @@ export class MyDrive {
     this.actionMessage.set('');
     this.actionError.set('');
 
+    this.openDownloadUrl(file.id, file.name);
+    this.actionMessage.set('เริ่มดาวน์โหลดไฟล์แล้ว');
+    window.setTimeout(() => this.downloadingFileId.set(null), 1000);
+    return;
+
     this.fileService
       .download(file.id)
       .pipe(finalize(() => this.downloadingFileId.set(null)))
@@ -609,6 +620,47 @@ export class MyDrive {
           this.actionError.set('ไม่สามารถดาวน์โหลดไฟล์ได้');
         },
       });
+  }
+
+  toggleFileStar(file: MyDriveFile): void {
+    if (this.sharedDriveMode() || this.starringFileId() !== null) {
+      return;
+    }
+
+    const nextStarred = !this.isFileStarred(file.id);
+
+    this.closeActionMenu();
+    this.starringFileId.set(file.id);
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    const request = nextStarred ? this.fileService.star(file.id) : this.fileService.unstar(file.id);
+
+    request
+      .pipe(finalize(() => this.starringFileId.set(null)))
+      .subscribe({
+        next: () => {
+          this.starredFileIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+
+            if (nextStarred) {
+              nextIds.add(file.id);
+            } else {
+              nextIds.delete(file.id);
+            }
+
+            return nextIds;
+          });
+          this.actionMessage.set(nextStarred ? 'เพิ่มในรายการโปรดแล้ว' : 'นำออกจากรายการโปรดแล้ว');
+        },
+        error: () => {
+          this.actionError.set('ไม่สามารถอัปเดตรายการโปรดได้');
+        },
+      });
+  }
+
+  isFileStarred(fileId: number): boolean {
+    return this.starredFileIds().has(fileId);
   }
 
   deleteFile(file: MyDriveFile): void {
@@ -653,6 +705,11 @@ export class MyDrive {
           }
 
           this.files.update((files) => files.filter((item) => item.id !== file.id));
+          this.starredFileIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+            nextIds.delete(file.id);
+            return nextIds;
+          });
           this.actionMessage.set('ลบไฟล์สำเร็จ');
           this.deleteTarget.set(null);
         },
@@ -774,6 +831,11 @@ export class MyDrive {
         this.files.update((currentFiles) =>
           currentFiles.filter((file) => !deletedFileIds.has(file.id)),
         );
+        this.starredFileIds.update((currentIds) => {
+          const nextIds = new Set(currentIds);
+          deletedFileIds.forEach((fileId) => nextIds.delete(fileId));
+          return nextIds;
+        });
         this.selectedFileIds.set(failedFileIds);
 
         if (deletedFileIds.size > 0) {
@@ -2046,6 +2108,17 @@ export class MyDrive {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  }
+
+  private openDownloadUrl(fileId: number, fileName: string): void {
+    const link = document.createElement('a');
+
+    link.href = this.fileService.downloadUrl(fileId);
+    link.download = fileName;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   private restoreViewMode(): void {

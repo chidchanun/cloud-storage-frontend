@@ -44,6 +44,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/trash/trash').then((module) => module.Trash),
   },
   {
+    path: 'starred',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/starred/starred').then((module) => module.Starred),
+  },
+  {
     path: 'shared-with-me',
     canActivate: [authGuard],
     loadComponent: () =>

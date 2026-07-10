@@ -157,6 +157,11 @@ export class SharedWithMe {
     this.actionMessage.set('');
     this.actionError.set('');
 
+    this.openDownloadUrl(file.fileId, file.name);
+    this.actionMessage.set(`เริ่มดาวน์โหลด "${file.name}" แล้ว`);
+    window.setTimeout(() => this.downloadingFileId.set(null), 1000);
+    return;
+
     this.fileService
       .download(file.fileId)
       .pipe(finalize(() => this.downloadingFileId.set(null)))
@@ -308,5 +313,16 @@ export class SharedWithMe {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  }
+
+  private openDownloadUrl(fileId: number, fileName: string): void {
+    const link = document.createElement('a');
+
+    link.href = this.fileService.downloadUrl(fileId);
+    link.download = fileName;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 }
