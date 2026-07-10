@@ -1,59 +1,172 @@
-# CloudStorageFrontend
+# AnuCloud Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.18.
+Angular frontend for AnuCloud, a Google Drive / OneDrive style cloud storage app.
 
-## Development server
+## Stack
 
-To start a local development server, run:
+- Angular 21
+- Angular SSR with Express
+- Tailwind CSS
+- Lucide Angular icons
+- Local Kanit font from `public/fonts/Kanit`
 
-```bash
-ng serve
+## Main Features
+
+- Login, register, Google OAuth callback
+- Email verification flow
+- Dashboard
+- My Drive with folders, grid/list view, upload progress, chunk upload, rename, move, delete, share, and star
+- Shared with me
+- Starred files and folders
+- Recent files
+- Trash
+- Profile update and password setup
+- Plan upgrade UI
+
+## Requirements
+
+- Node.js 24 or compatible with the Docker image
+- npm
+- Backend API running locally or deployed
+
+## Environment
+
+Frontend API URLs are configured in:
+
+- Local: `src/environments/environment.ts`
+- Production: `src/environments/environment.production.ts`
+
+Current values:
+
+```ts
+// local
+apiUrl: 'http://localhost:9000/api'
+
+// production
+apiUrl: 'https://cloudstorageapi.chidchanun.online/api'
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+If the backend port/domain changes, update these files before building.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Install
 
 ```bash
-ng generate component component-name
+npm ci
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Development
 
 ```bash
-ng generate --help
+npm start
 ```
 
-## Building
+Open:
 
-To build the project run:
+```text
+http://localhost:4200
+```
+
+## Build
 
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Build output:
 
-## Running unit tests
+```text
+dist/cloud-storage-frontend
+```
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Run SSR Build Locally
 
 ```bash
-ng test
+npm run build
+node dist/cloud-storage-frontend/server/server.mjs
 ```
 
-## Running end-to-end tests
+Default port:
 
-For end-to-end (e2e) testing, run:
+```text
+4000
+```
+
+You can override it:
 
 ```bash
-ng e2e
+PORT=4000 node dist/cloud-storage-frontend/server/server.mjs
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+PowerShell:
 
-## Additional Resources
+```powershell
+$env:PORT="4000"
+node dist/cloud-storage-frontend/server/server.mjs
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Docker
+
+Build image:
+
+```bash
+docker build -t anucloud-frontend:latest .
+```
+
+Run container:
+
+```bash
+docker run -d \
+  --name anucloud-frontend \
+  --restart unless-stopped \
+  -p 4000:4000 \
+  anucloud-frontend:latest
+```
+
+PowerShell:
+
+```powershell
+docker run -d `
+  --name anucloud-frontend `
+  --restart unless-stopped `
+  -p 4000:4000 `
+  anucloud-frontend:latest
+```
+
+## Cloudflare Tunnel
+
+Recommended public hostname mapping:
+
+```text
+cloudstorage.chidchanun.online -> http://anucloud-frontend:4000
+```
+
+If `cloudflared` is not in the same Docker network, use the host address:
+
+```text
+cloudstorage.chidchanun.online -> http://host.docker.internal:4000
+```
+
+## Performance Notes
+
+- Static files are served by the SSR Express server from `dist/cloud-storage-frontend/browser`.
+- `src/server.ts` uses long-lived static cache headers.
+- `src/index.html` preconnects to the production API domain.
+- Kanit is loaded locally from `public/fonts/Kanit`.
+- For better production performance, place Nginx/Caddy in front of the SSR server to enable gzip/brotli and stricter cache rules.
+
+## Useful Commands
+
+```bash
+npm run build
+npm test
+```
+
+## Project Structure
+
+```text
+src/app/core        Shared services, guards, API clients
+src/app/features    Pages and feature modules
+src/app/shared      Shared UI components
+src/environments    API URL configuration
+public/fonts        Local font files
+```
