@@ -126,6 +126,7 @@
                 role="button"
                 tabindex="0"
                 (click)="openFolder(folder)"
+                (contextmenu)="openFolderContextMenu(folder, $event)"
                 (keydown.enter)="openFolder(folder)"
                 (keydown.space)="openFolder(folder)"
                 class="grid min-h-16 cursor-pointer grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/70 max-md:grid-cols-1 max-md:gap-2"
@@ -163,6 +164,7 @@
             }
             @for (file of filteredFiles(); track file.id) {
               <article
+                (contextmenu)="openFileContextMenu(file, $event)"
                 class="grid min-h-16 grid-cols-[minmax(0,1fr)_160px_180px_150px] items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/70 max-md:grid-cols-1 max-md:gap-2"
               >
                 <div class="flex min-w-0 items-center gap-3">
@@ -255,6 +257,52 @@
       </div>
     </section>
   </div>
+
+  @if (contextMenuFolder(); as folder) {
+    <div
+      class="fixed z-50 w-50 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+      [style.top.px]="actionMenuPosition().top"
+      [style.left.px]="actionMenuPosition().left"
+    >
+      <button
+        type="button"
+        (click)="openFolder(folder)"
+        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+      >
+        <svg lucideFolder aria-hidden="true" class="h-4 w-4"></svg>
+        เปิดโฟลเดอร์
+      </button>
+    </div>
+  }
+
+  @if (contextMenuFile(); as file) {
+    <div
+      class="fixed z-50 w-50 overflow-hidden rounded-lg border border-blue-100 bg-white py-1 shadow-[0_18px_40px_rgba(15,23,42,0.16)] dark:border-slate-700 dark:bg-slate-900"
+      [style.top.px]="actionMenuPosition().top"
+      [style.left.px]="actionMenuPosition().left"
+    >
+      @if (canEdit(file)) {
+        <button
+          type="button"
+          (click)="downloadFile(file)"
+          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+        >
+          <svg lucideDownload aria-hidden="true" class="h-4 w-4" [class.animate-bounce]="downloadingFileId() === file.fileId"></svg>
+          ดาวน์โหลด
+        </button>
+        <button
+          type="button"
+          (click)="openRenameDialog(file)"
+          class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+        >
+          <svg lucidePencil aria-hidden="true" class="h-4 w-4"></svg>
+          เปลี่ยนชื่อ
+        </button>
+      } @else {
+        <div class="px-3 py-2 text-sm font-bold text-slate-400">viewer</div>
+      }
+    </div>
+  }
 
   @if (renameTarget()) {
     <div

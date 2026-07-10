@@ -326,7 +326,7 @@
           @if (effectiveViewMode() === 'grid') {
             @if (loading()) {
               <div
-                class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
+                class="grid grid-cols-5 gap-3 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
               >
                 @for (item of [1, 2, 3, 4]; track item) {
                   <div
@@ -364,7 +364,7 @@
               </div>
             } @else {
             <div
-              class="grid grid-cols-5 gap-4 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
+              class="grid grid-cols-5 gap-3 p-5 max-2xl:grid-cols-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2"
             >
               @for (folder of sortedFolders(); track folder.id) {
                 <article
@@ -399,8 +399,11 @@
                   </div>
 
                   <div class="grid gap-2 p-4">
-                    <h3 class="m-0 truncate text-sm font-black" [title]="folder.name">
-                      {{ folder.name }}
+                    <h3 class="m-0 flex min-w-0 items-center gap-2 text-sm font-black" [title]="folder.name">
+                      <span class="truncate">{{ folder.name }}</span>
+                      @if (!sharedDriveMode() && isFolderStarred(folder.id)) {
+                        <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                      }
                     </h3>
                     <div class="grid gap-1 text-xs font-bold text-slate-500 dark:text-slate-400">
                       <span>โฟลเดอร์</span>
@@ -415,6 +418,23 @@
                       [style.top.px]="actionMenuPosition().top"
                       [style.left.px]="actionMenuPosition().left"
                     >
+                      @if (!sharedDriveMode()) {
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); toggleFolderStar(folder)"
+                        class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                      >
+                        <svg
+                          lucideStar
+                          aria-hidden="true"
+                          class="h-4 w-4"
+                          [class.fill-amber-400]="isFolderStarred(folder.id)"
+                          [class.text-amber-400]="isFolderStarred(folder.id)"
+                          [class.animate-pulse]="starringFolderId() === folder.id"
+                        ></svg>
+                        {{ isFolderStarred(folder.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
+                      </button>
+                      }
                       <button
                         type="button"
                         (click)="$event.stopPropagation(); openRenameFolderDialog(folder)"
@@ -543,7 +563,7 @@
                         [title]="file.name"
                       >
                         {{ file.name }}
-                        @if (isFileStarred(file.id)) {
+                        @if (!sharedDriveMode() && isFileStarred(file.id)) {
                           <svg lucideStar aria-hidden="true" class="ml-1 inline h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
                         }
                       </h3>
@@ -761,7 +781,12 @@
                             >
                               <svg lucideFolder aria-hidden="true" class="h-5 w-5"></svg>
                             </div>
-                            <span class="font-extrabold">{{ folder.name }}</span>
+                            <span class="flex min-w-0 items-center gap-2 font-extrabold">
+                              <span class="truncate">{{ folder.name }}</span>
+                              @if (!sharedDriveMode() && isFolderStarred(folder.id)) {
+                                <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
+                              }
+                            </span>
                           </div>
                         </td>
                         <td class="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
@@ -791,6 +816,23 @@
                               [style.top.px]="actionMenuPosition().top"
                               [style.left.px]="actionMenuPosition().left"
                             >
+                              @if (!sharedDriveMode()) {
+                              <button
+                                type="button"
+                                (click)="$event.stopPropagation(); toggleFolderStar(folder)"
+                                class="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-300"
+                              >
+                                <svg
+                                  lucideStar
+                                  aria-hidden="true"
+                                  class="h-4 w-4"
+                                  [class.fill-amber-400]="isFolderStarred(folder.id)"
+                                  [class.text-amber-400]="isFolderStarred(folder.id)"
+                                  [class.animate-pulse]="starringFolderId() === folder.id"
+                                ></svg>
+                                {{ isFolderStarred(folder.id) ? 'เลิกติดดาว' : 'ติดดาว' }}
+                              </button>
+                              }
                               <button
                                 type="button"
                                 (click)="$event.stopPropagation(); openRenameFolderDialog(folder)"
@@ -886,7 +928,7 @@
                             </div>
                             <span class="flex min-w-0 items-center gap-2 font-extrabold">
                               <span class="truncate">{{ file.name }}</span>
-                              @if (isFileStarred(file.id)) {
+                              @if (!sharedDriveMode() && isFileStarred(file.id)) {
                                 <svg lucideStar aria-hidden="true" class="h-4 w-4 shrink-0 fill-amber-400 text-amber-400"></svg>
                               }
                             </span>

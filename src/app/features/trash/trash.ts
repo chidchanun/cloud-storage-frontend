@@ -2,6 +2,7 @@ import {
   afterNextRender,
   Component,
   computed,
+  HostListener,
   inject,
   signal,
 } from '@angular/core';
@@ -38,6 +39,11 @@ interface TrashFile {
   type: 'document' | 'image' | 'archive' | 'file';
   size: string;
   deletedAt: string;
+}
+
+interface ActionMenuPosition {
+  top: number;
+  left: number;
 }
 
 type DeleteMode = 'single' | 'selected' | 'all';
@@ -77,6 +83,11 @@ export class Trash {
   readonly restoreError = signal('');
   readonly deleteMessage = signal('');
   readonly deleteError = signal('');
+  readonly contextMenuFile = signal<TrashFile | null>(null);
+  readonly actionMenuPosition = signal<ActionMenuPosition>({
+    top: 0,
+    left: 0,
+  });
   readonly selectedFileCount = computed(() => this.selectedFileIds().size);
   readonly selectedFiles = computed(() => {
     const selectedIds = this.selectedFileIds();
@@ -94,6 +105,11 @@ export class Trash {
     afterNextRender(() => {
       window.setTimeout(() => this.loadTrashFiles(), 0);
     });
+  }
+
+  @HostListener('document:click')
+  closeContextMenuOnLeftClick(): void {
+    this.closeContextMenu();
   }
 
   loadTrashFiles(): void {
@@ -122,6 +138,7 @@ export class Trash {
       return;
     }
 
+    this.closeContextMenu();
     this.restoringFileId.set(file.id);
     this.restoreMessage.set('');
     this.restoreError.set('');
@@ -152,12 +169,25 @@ export class Trash {
       return;
     }
 
+    this.closeContextMenu();
     this.deleteTarget.set(file);
     this.deleteMode.set('single');
     this.deleteMessage.set('');
     this.deleteError.set('');
     this.restoreMessage.set('');
     this.restoreError.set('');
+  }
+
+  openFileContextMenu(file: TrashFile, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenuFile.set(file);
+    this.actionMenuPosition.set(this.fitMenuPosition(event.clientX, event.clientY));
+  }
+
+  closeContextMenu(): void {
+    this.contextMenuFile.set(null);
   }
 
   cancelDeleteFile(): void {
@@ -445,5 +475,16 @@ export class Trash {
     }
 
     return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+  }
+
+  private fitMenuPosition(left: number, top: number): ActionMenuPosition {
+    const menuWidth = 180;
+    const menuHeight = 96;
+    const padding = 12;
+
+    return {
+      left: Math.min(left, window.innerWidth - menuWidth - padding),
+      top: Math.min(top, window.innerHeight - menuHeight - padding),
+    };
   }
 }

@@ -2,10 +2,12 @@ import {
   afterNextRender,
   Component,
   computed,
+  HostListener,
   inject,
   signal,
 } from '@angular/core';
 import {
+  ActivatedRoute,
   Router,
   RouterLink,
 } from '@angular/router';
@@ -15,6 +17,7 @@ import {
   LucideFile,
   LucideFileImage,
   LucideFileText,
+  LucideFolder,
   LucideFolderOpen,
   LucideGrid3X3,
   LucideList,
@@ -22,24 +25,42 @@ import {
   LucideSearch,
   LucideStar,
 } from '@lucide/angular';
-import { finalize } from 'rxjs';
+import {
+  finalize,
+  forkJoin,
+  Observable,
+} from 'rxjs';
 
 import {
   FileService,
   StarredFile,
+  UserFile,
 } from '../../core/services/file.service';
+import {
+  FolderService,
+  StarredFolder,
+  UserFolder,
+} from '../../core/services/folder.service';
 import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
 
 interface StarredViewFile {
+  kind: 'file' | 'folder' | 'folder-file';
   id: number;
   folderId: number | null;
+  sourceFolderName?: string;
   name: string;
-  type: 'document' | 'image' | 'file';
+  type: 'document' | 'image' | 'file' | 'folder';
   mimeType: string;
   size: string;
+  starredAtTime: number;
   starredAt: string;
   updatedAt: string;
+}
+
+interface ActionMenuPosition {
+  top: number;
+  left: number;
 }
 
 type StarredViewMode = 'grid' | 'table';
@@ -57,6 +78,7 @@ const starredViewModeStorageKey = 'anucloud:starred-view-mode';
     LucideFile,
     LucideFileImage,
     LucideFileText,
+    LucideFolder,
     LucideFolderOpen,
     LucideGrid3X3,
     LucideList,
@@ -69,10 +91,14 @@ const starredViewModeStorageKey = 'anucloud:starred-view-mode';
 })
 export class Starred {
   private readonly fileService = inject(FileService);
+  private readonly folderService = inject(FolderService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly loading = signal(false);
   readonly files = signal<StarredViewFile[]>([]);
+  readonly currentFolderId = signal<number | null>(null);
+  readonly currentFolderName = signal('');
   readonly searchTerm = signal('');
   readonly loadError = signal('');
   readonly actionMessage = signal('');
@@ -80,6 +106,11 @@ export class Starred {
   readonly downloadingFileId = signal<number | null>(null);
   readonly unstarringFileId = signal<number | null>(null);
   readonly viewMode = signal<StarredViewMode>('grid');
+  readonly contextMenuFile = signal<StarredViewFile | null>(null);
+  readonly actionMenuPosition = signal<ActionMenuPosition>({
+    top: 0,
+    left: 0,
+  });
 
   readonly filteredFiles = computed(() => {
     const keyword = this.searchTerm().trim().toLowerCase();
@@ -99,8 +130,26 @@ export class Starred {
   constructor() {
     afterNextRender(() => {
       this.restoreViewMode();
-      window.setTimeout(() => this.loadStarredFiles(), 0);
+      this.route.paramMap.subscribe((params) => {
+        const folderId = Number(params.get('id'));
+
+        window.setTimeout(() => {
+          if (Number.isInteger(folderId) && folderId > 0) {
+            this.loadStarredFolder(folderId);
+            return;
+          }
+
+          this.currentFolderId.set(null);
+          this.currentFolderName.set('');
+          this.loadStarredFiles();
+        }, 0);
+      });
     });
+  }
+
+  @HostListener('document:click')
+  closeContextMenuOnLeftClick(): void {
+    this.closeContextMenu();
   }
 
   loadStarredFiles(): void {
@@ -113,17 +162,63 @@ export class Starred {
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService
-      .starredFiles()
+    forkJoin({
+      files: this.fileService.starredFiles(),
+      folders: this.folderService.starredFolders(),
+    })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (files) => {
-          this.files.set(files.map((file) => this.toViewFile(file)));
+        next: ({ files, folders }) => {
+          this.files.set(this.buildStarredItems(files, folders));
         },
         error: () => {
           this.loadError.set('ไม่สามารถโหลดรายการโปรดได้');
         },
       });
+  }
+
+  loadStarredFolder(folderId: number): void {
+    if (this.loading()) {
+      return;
+    }
+
+    this.currentFolderId.set(folderId);
+    this.loading.set(true);
+    this.loadError.set('');
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    forkJoin({
+      folder: this.folderService.getById(folderId),
+      folders: this.folderService.list(folderId),
+      files: this.fileService.list(folderId),
+    })
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: ({ folder, folders, files }) => {
+          this.currentFolderName.set(folder.folderName);
+          this.files.set([
+            ...folders.map((childFolder) => this.toViewChildFolder(childFolder)),
+            ...files.map((file) => this.toViewFolderContentFile(file)),
+          ]);
+        },
+        error: () => {
+          this.currentFolderName.set('');
+          this.files.set([]);
+          this.loadError.set('ไม่สามารถโหลดโฟลเดอร์รายการโปรดได้');
+        },
+      });
+  }
+
+  refresh(): void {
+    const folderId = this.currentFolderId();
+
+    if (folderId) {
+      this.loadStarredFolder(folderId);
+      return;
+    }
+
+    this.loadStarredFiles();
   }
 
   updateSearchTerm(event: Event): void {
@@ -137,10 +232,16 @@ export class Starred {
   }
 
   downloadFile(file: StarredViewFile): void {
+    if (file.kind === 'folder') {
+      this.openFileLocation(file);
+      return;
+    }
+
     if (this.downloadingFileId() !== null) {
       return;
     }
 
+    this.closeContextMenu();
     this.downloadingFileId.set(file.id);
     this.actionMessage.set('');
     this.actionError.set('');
@@ -154,16 +255,21 @@ export class Starred {
       return;
     }
 
+    this.closeContextMenu();
     this.unstarringFileId.set(file.id);
     this.actionMessage.set('');
     this.actionError.set('');
 
-    this.fileService
-      .unstar(file.id)
+    const request: Observable<unknown> =
+      file.kind === 'folder'
+        ? this.folderService.unstar(file.id)
+        : this.fileService.unstar(file.id);
+
+    request
       .pipe(finalize(() => this.unstarringFileId.set(null)))
       .subscribe({
         next: () => {
-          this.files.update((files) => files.filter((item) => item.id !== file.id));
+          this.files.update((files) => this.removeUnstarredItems(files, file));
           this.actionMessage.set('นำออกจากรายการโปรดแล้ว');
         },
         error: () => {
@@ -173,7 +279,19 @@ export class Starred {
   }
 
   openFileLocation(file: StarredViewFile): void {
+    this.closeContextMenu();
+
+    if (file.kind === 'folder') {
+      void this.router.navigate(['/starred/folders', file.id]);
+      return;
+    }
+
     const queryParams = { fileId: file.id };
+
+    if (this.currentFolderId()) {
+      void this.router.navigate(['/starred/folders', this.currentFolderId()], { queryParams });
+      return;
+    }
 
     if (file.folderId) {
       void this.router.navigate(['/my-drive/folders', file.folderId], { queryParams });
@@ -183,7 +301,23 @@ export class Starred {
     void this.router.navigate(['/my-drive'], { queryParams });
   }
 
-  fileIcon(file: StarredViewFile): 'image' | 'text' | 'file' {
+  openFileContextMenu(file: StarredViewFile, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenuFile.set(file);
+    this.actionMenuPosition.set(this.fitMenuPosition(event.clientX, event.clientY));
+  }
+
+  closeContextMenu(): void {
+    this.contextMenuFile.set(null);
+  }
+
+  fileIcon(file: StarredViewFile): 'image' | 'text' | 'file' | 'folder' {
+    if (file.type === 'folder') {
+      return 'folder';
+    }
+
     if (file.type === 'image') {
       return 'image';
     }
@@ -196,19 +330,91 @@ export class Starred {
   }
 
   private toViewFile(file: StarredFile): StarredViewFile {
+    const starredAtTime = new Date(file.starredAt).getTime();
+
     return {
+      kind: 'file',
       id: file.id,
       folderId: file.folderId ?? null,
       name: file.originalName,
       type: this.fileType(file),
       mimeType: file.mimeType,
       size: this.formatFileSize(file.sizeBytes),
+      starredAtTime: Number.isNaN(starredAtTime) ? 0 : starredAtTime,
       starredAt: this.formatDate(file.starredAt),
       updatedAt: this.formatDate(file.updatedAt),
     };
   }
 
-  private fileType(file: StarredFile): StarredViewFile['type'] {
+  private buildStarredItems(
+    files: StarredFile[],
+    folders: StarredFolder[],
+  ): StarredViewFile[] {
+    return [
+      ...folders.map((folder) => this.toViewFolder(folder)),
+      ...files.map((file) => this.toViewFile(file)),
+    ].sort((firstItem, secondItem) => secondItem.starredAtTime - firstItem.starredAtTime);
+  }
+
+  private toViewFolder(folder: StarredFolder): StarredViewFile {
+    const starredAtTime = new Date(folder.starredAt).getTime();
+
+    return {
+      kind: 'folder',
+      id: folder.id,
+      folderId: folder.parentId ?? null,
+      name: folder.folderName,
+      type: 'folder',
+      mimeType: 'โฟลเดอร์',
+      size: '-',
+      starredAtTime: Number.isNaN(starredAtTime) ? 0 : starredAtTime,
+      starredAt: this.formatDate(folder.starredAt),
+      updatedAt: this.formatDate(folder.updatedAt),
+    };
+  }
+
+  private toViewChildFolder(folder: UserFolder): StarredViewFile {
+    const updatedAtTime = new Date(folder.updatedAt).getTime();
+
+    return {
+      kind: 'folder',
+      id: folder.id,
+      folderId: folder.parentId,
+      name: folder.folderName,
+      type: 'folder',
+      mimeType: 'โฟลเดอร์',
+      size: '-',
+      starredAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
+      starredAt: '-',
+      updatedAt: this.formatDate(folder.updatedAt),
+    };
+  }
+
+  private toViewFolderContentFile(file: UserFile): StarredViewFile {
+    const updatedAtTime = new Date(file.updatedAt).getTime();
+
+    return {
+      kind: 'file',
+      id: file.id,
+      folderId: file.folderId ?? this.currentFolderId(),
+      name: file.originalName,
+      type: this.fileType(file),
+      mimeType: file.mimeType,
+      size: this.formatFileSize(file.sizeBytes),
+      starredAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
+      starredAt: '-',
+      updatedAt: this.formatDate(file.updatedAt),
+    };
+  }
+
+  private removeUnstarredItems(
+    files: StarredViewFile[],
+    unstarredFile: StarredViewFile,
+  ): StarredViewFile[] {
+    return files.filter((item) => item.kind !== unstarredFile.kind || item.id !== unstarredFile.id);
+  }
+
+  private fileType(file: StarredFile | UserFile): StarredViewFile['type'] {
     const mimeType = file.mimeType.toLowerCase();
 
     if (mimeType.startsWith('image/')) {
@@ -269,5 +475,16 @@ export class Starred {
     if (savedMode === 'grid' || savedMode === 'table') {
       this.viewMode.set(savedMode);
     }
+  }
+
+  private fitMenuPosition(left: number, top: number): ActionMenuPosition {
+    const menuWidth = 208;
+    const menuHeight = 136;
+    const padding = 12;
+
+    return {
+      left: Math.min(left, window.innerWidth - menuWidth - padding),
+      top: Math.min(top, window.innerHeight - menuHeight - padding),
+    };
   }
 }

@@ -3,29 +3,30 @@
   <section aria-labelledby="register-title"
     class="grid min-h-155 w-full max-w-7xl overflow-hidden rounded-3xl border border-blue-200/80 bg-slate-50/90 shadow-[0_24px_80px_rgba(15,23,42,0.22)] dark:border-cyan-300/20 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.48)] lg:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)] max-md:min-h-0 max-md:grid-cols-1 max-md:rounded-2xl">
     <div
-      class="flex flex-col justify-center gap-12 bg-[linear-gradient(145deg,rgba(109,40,217,0.92),rgba(37,99,235,0.88)_50%,rgba(14,165,233,0.86)),#2563EB] p-12 text-slate-50 dark:bg-[linear-gradient(145deg,rgba(109,40,217,0.80),rgba(37,99,235,0.74)_50%,rgba(14,165,233,0.58)),#111827] max-md:gap-8 max-md:p-7">
-      <a class="inline-flex w-fit items-center gap-3.5 text-inherit no-underline" routerLink="/"
-        aria-label="AnuCloud">
+      class="flex flex-col justify-center gap-12 bg-[linear-gradient(145deg,rgba(109,40,217,0.92),rgba(37,99,235,0.88)_50%,rgba(14,165,233,0.86)),#2563EB] p-12 text-black dark:text-slate-50 dark:bg-[linear-gradient(145deg,rgba(109,40,217,0.80),rgba(37,99,235,0.74)_50%,rgba(14,165,233,0.58)),#111827] max-md:gap-8 max-md:p-7">
+      <a class="inline-flex w-fit items-center gap-3.5 text-inherit no-underline" routerLink="/" aria-label="AnuCloud">
         <img src="/assets/AnuCloud-128.png" width="72" height="72" alt="AnuCloud logo"
-          class="h-18 w-18 rounded-[18px] object-cover shadow-[0_16px_36px_rgba(17,24,39,0.28)] max-md:h-15 max-md:w-15 max-md:rounded-[14px]" decoding="async" fetchpriority="high" />
+          class="h-18 w-18 rounded-[18px] object-cover shadow-[0_16px_36px_rgba(17,24,39,0.28)] max-md:h-15 max-md:w-15 max-md:rounded-[14px]"
+          decoding="async" fetchpriority="high" />
 
         <span class="flex flex-col leading-none">
           <span
-            class="bg-linear-to-r from-white via-blue-200 to-cyan-300 bg-clip-text text-[clamp(1.8rem,4vw,2.55rem)] font-black tracking-normal text-transparent">
+            class="truncate bg-linear-to-r from-violet-700 via-blue-600 to-cyan-400 bg-clip-text text-[clamp(1.8rem,4vw,2.55rem)] font-black tracking-normal text-transparent">
             AnuCloud
           </span>
-          <span class="mt-2 text-xs font-bold uppercase tracking-normal text-blue-200">
+          <span class="mt-2 text-xs font-bold uppercase tracking-normal dark:text-blue-200 text-blue-500">
             Secure cloud storage
           </span>
         </span>
       </a>
 
       <div class="max-w-120">
-        <p class="mb-3 text-xs font-extrabold uppercase tracking-normal text-blue-200">Create account</p>
+        <p class="mb-3 text-xs font-extrabold uppercase tracking-normal dark:text-blue-200 text-blue-500">Create account
+        </p>
         <h1 id="register-title" class="m-0 text-[clamp(1.9rem,3.2vw,3.25rem)] font-black leading-tight tracking-normal">
           สมัครบัญชีเพื่อเริ่มจัดเก็บไฟล์ของคุณ
         </h1>
-        <p class="mt-5 max-w-110 text-base leading-8 text-slate-50/80 dark:text-slate-100/80">
+        <p class="mt-5 max-w-110 text-base leading-8 text-black dark:text-slate-100/80">
           สร้างพื้นที่ส่วนตัวสำหรับอัปโหลด จัดการ และเข้าถึงไฟล์สำคัญได้อย่างปลอดภัย
         </p>
       </div>
@@ -54,43 +55,7 @@
       </p>
       }
 
-      <div
-        class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-lg border border-blue-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-        <div
-          class="grid h-20 w-20 place-items-center overflow-hidden rounded-lg bg-blue-100 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300">
-          @if (profilePreviewUrl()) {
-          <img [src]="profilePreviewUrl()" alt="ตัวอย่างรูปโปรไฟล์" class="h-full w-full object-cover" />
-          } @else {
-          <svg lucideImage aria-hidden="true" class="h-8 w-8"></svg>
-          }
-        </div>
 
-        <div class="min-w-0">
-          <label for="profilePicture" class="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-200">
-            รูปโปรไฟล์
-            <span class="text-[12px] text-gray-400">* ไม่จำเป็นต้องอัพโหลด</span>
-          </label>
-
-          <div class="flex flex-wrap gap-2">
-            <label for="profilePicture"
-              class="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300">
-              <svg lucideUpload aria-hidden="true" class="h-4 w-4"></svg>
-              เลือกรูป
-            </label>
-
-            @if (profilePicture()) {
-            <button type="button" (click)="clearProfilePicture()"
-              class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-bold text-slate-700 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:text-cyan-300">
-              <svg lucideX aria-hidden="true" class="h-4 w-4"></svg>
-              ลบรูป
-            </button>
-            }
-          </div>
-
-          <input id="profilePicture" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"
-            (change)="selectProfilePicture($event)" />
-        </div>
-      </div>
 
       <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
         <div class="grid gap-2">
@@ -155,6 +120,7 @@
               }
             </button>
           </div>
+
         </div>
 
         <div class="grid gap-2">
@@ -178,6 +144,37 @@
           </div>
         </div>
       </div>
+      <ul class="m-0 grid gap-1.5 p-0 text-xs font-bold">
+        <li class="flex items-center gap-2" [class.text-emerald-600]="passwordHasMinLength()"
+          [class.text-slate-400]="!passwordHasMinLength()">
+          <span class="grid h-4 w-4 place-items-center rounded-full border text-[0.65rem]"
+            [class.border-emerald-500]="passwordHasMinLength()" [class.bg-emerald-500]="passwordHasMinLength()"
+            [class.text-white]="passwordHasMinLength()" [class.border-slate-300]="!passwordHasMinLength()">✓</span>
+          อย่างน้อย 8 ตัวอักษร
+        </li>
+        <li class="flex items-center gap-2" [class.text-emerald-600]="passwordHasUppercase()"
+          [class.text-slate-400]="!passwordHasUppercase()">
+          <span class="grid h-4 w-4 place-items-center rounded-full border text-[0.65rem]"
+            [class.border-emerald-500]="passwordHasUppercase()" [class.bg-emerald-500]="passwordHasUppercase()"
+            [class.text-white]="passwordHasUppercase()" [class.border-slate-300]="!passwordHasUppercase()">✓</span>
+          มีตัวอักษรพิมพ์ใหญ่
+        </li>
+        <li class="flex items-center gap-2" [class.text-emerald-600]="passwordHasNumber()"
+          [class.text-slate-400]="!passwordHasNumber()">
+          <span class="grid h-4 w-4 place-items-center rounded-full border text-[0.65rem]"
+            [class.border-emerald-500]="passwordHasNumber()" [class.bg-emerald-500]="passwordHasNumber()"
+            [class.text-white]="passwordHasNumber()" [class.border-slate-300]="!passwordHasNumber()">✓</span>
+          มีตัวเลข
+        </li>
+        <li class="flex items-center gap-2" [class.text-emerald-600]="passwordHasSpecialCharacter()"
+          [class.text-slate-400]="!passwordHasSpecialCharacter()">
+          <span class="grid h-4 w-4 place-items-center rounded-full border text-[0.65rem]"
+            [class.border-emerald-500]="passwordHasSpecialCharacter()"
+            [class.bg-emerald-500]="passwordHasSpecialCharacter()" [class.text-white]="passwordHasSpecialCharacter()"
+            [class.border-slate-300]="!passwordHasSpecialCharacter()">✓</span>
+          มีอักขระพิเศษ เช่น ! &#64; # $
+        </li>
+      </ul>
 
       @if (registerForm.hasError('passwordMismatch') && registerForm.touched) {
       <p class="m-0 text-sm font-bold text-violet-700 dark:text-cyan-200">รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน</p>

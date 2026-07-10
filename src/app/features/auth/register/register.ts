@@ -48,6 +48,36 @@ export const passwordMatchValidator: ValidatorFn = (
     : { passwordMismatch: true };
 };
 
+export const passwordStrengthValidator: ValidatorFn = (
+  control: AbstractControl,
+): ValidationErrors | null => {
+  const password = String(control.value ?? '');
+
+  if (!password) {
+    return null;
+  }
+
+  const errors: ValidationErrors = {};
+
+  if (password.length < 8) {
+    errors['minLengthRule'] = true;
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors['uppercaseRule'] = true;
+  }
+
+  if (!/\d/.test(password)) {
+    errors['numberRule'] = true;
+  }
+
+  if (!/[^A-Za-z0-9\s]/.test(password)) {
+    errors['specialCharacterRule'] = true;
+  }
+
+  return Object.keys(errors).length > 0 ? errors : null;
+};
+
 @Component({
   selector: 'app-register',
   imports: [
@@ -96,11 +126,8 @@ export class Register {
       ]],
       password: ['', [
         Validators.required,
-        Validators.minLength(8),
         Validators.maxLength(64),
-        Validators.pattern(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{8,64}$/,
-        ),
+        passwordStrengthValidator,
       ]],
       confirmPassword: ['', [
         Validators.required,
@@ -117,6 +144,26 @@ export class Register {
 
   toggleConfirmPassword(): void {
     this.showConfirmPassword.update((value) => !value);
+  }
+
+  passwordValue(): string {
+    return this.registerForm.controls.password.value;
+  }
+
+  passwordHasMinLength(): boolean {
+    return this.passwordValue().length >= 8;
+  }
+
+  passwordHasUppercase(): boolean {
+    return /[A-Z]/.test(this.passwordValue());
+  }
+
+  passwordHasNumber(): boolean {
+    return /\d/.test(this.passwordValue());
+  }
+
+  passwordHasSpecialCharacter(): boolean {
+    return /[^A-Za-z0-9\s]/.test(this.passwordValue());
   }
 
   selectProfilePicture(event: Event): void {

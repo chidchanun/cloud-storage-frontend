@@ -35,7 +35,14 @@ import {
   LucideUpload,
   LucideX,
 } from '@lucide/angular';
-import { finalize, forkJoin } from 'rxjs';
+import {
+  catchError,
+  finalize,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+} from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -46,13 +53,19 @@ import {
   PlanService,
   UserStoragePlan,
 } from '../../core/services/plan.service';
+import {
+  FolderService,
+  UserFolder,
+} from '../../core/services/folder.service';
 import { environment } from '../../../environments/environment';
 import { AppSidebar } from '../../shared/components/app-sidebar/app-sidebar';
 import { AppHeader } from '../../shared/components/app-header/app-header';
 
 interface DriveFolder {
+  id: number;
   name: string;
   files: number;
+  updatedAtTime: number;
   updatedAt: string;
   color: string;
 }
@@ -79,6 +92,11 @@ type FileSortField = 'name' | 'type' | 'updated' | 'size';
 type SortDirection = 'asc' | 'desc';
 
 const fileViewModeStorageKey = 'anucloud:file-view-mode';
+const quickFolderColors = [
+  'text-blue-600 bg-blue-100 dark:text-cyan-300 dark:bg-cyan-300/10',
+  'text-violet-700 bg-violet-100 dark:text-violet-300 dark:bg-violet-300/10',
+  'text-sky-600 bg-sky-100 dark:text-sky-300 dark:bg-sky-300/10',
+];
 
 @Component({
   selector: 'app-dashboard',
@@ -114,6 +132,7 @@ const fileViewModeStorageKey = 'anucloud:file-view-mode';
 export class Dashboard implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly fileService = inject(FileService);
+  private readonly folderService = inject(FolderService);
   private readonly planService = inject(PlanService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -167,27 +186,9 @@ export class Dashboard implements OnDestroy {
   readonly sortDirection = signal<SortDirection>('desc');
   readonly filePreviewUrls = signal<Record<number, string>>({});
   readonly pageMessage = signal('');
-
-  readonly folders: DriveFolder[] = [
-    {
-      name: 'เอกสาร',
-      files: 24,
-      updatedAt: 'วันนี้',
-      color: 'text-blue-600 bg-blue-100 dark:text-cyan-300 dark:bg-cyan-300/10',
-    },
-    {
-      name: 'รูปภาพ',
-      files: 128,
-      updatedAt: 'เมื่อวาน',
-      color: 'text-violet-700 bg-violet-100 dark:text-violet-300 dark:bg-violet-300/10',
-    },
-    {
-      name: 'งานที่แชร์',
-      files: 9,
-      updatedAt: '2 วันที่แล้ว',
-      color: 'text-sky-600 bg-sky-100 dark:text-sky-300 dark:bg-sky-300/10',
-    },
-  ];
+  readonly loadingQuickFolders = signal(false);
+  readonly quickFoldersError = signal('');
+  readonly quickFolders = signal<DriveFolder[]>([]);
 
   readonly files = signal<DriveFile[]>([]);
   readonly sortedFiles = computed(() => {
@@ -212,6 +213,7 @@ export class Dashboard implements OnDestroy {
       this.syncMobileViewMode();
       this.restoreFileViewMode();
       this.loadStoragePlan();
+      this.loadQuickFolders();
       window.setTimeout(() => this.loadFiles(), 0);
     });
   }
@@ -232,9 +234,13 @@ export class Dashboard implements OnDestroy {
       .subscribe({
         next: ({ files, starredFiles }) => {
           const driveFiles = files.map((file) => this.toDriveFile(file));
+          const visibleFileIds = new Set(driveFiles.map((file) => file.id));
+          const nextStarredFileIds = starredFiles
+            .map((file) => file.id)
+            .filter((fileId) => Number.isFinite(fileId) && visibleFileIds.has(fileId));
 
           this.revokeFilePreviews();
-          this.starredFileIds.set(new Set(starredFiles.map((file) => file.id)));
+          this.starredFileIds.set(new Set(nextStarredFileIds));
           this.files.set(driveFiles);
           this.loadImagePreviews(driveFiles);
         },
@@ -260,6 +266,51 @@ export class Dashboard implements OnDestroy {
       });
   }
 
+  loadQuickFolders(): void {
+    if (this.loadingQuickFolders()) {
+      return;
+    }
+
+    this.loadingQuickFolders.set(true);
+    this.quickFoldersError.set('');
+
+    this.folderService
+      .list()
+      .pipe(
+        switchMap((folders) => {
+          const quickFolders = [...folders]
+            .sort((firstFolder, secondFolder) => {
+              return (
+                new Date(secondFolder.updatedAt).getTime() -
+                new Date(firstFolder.updatedAt).getTime()
+              );
+            })
+            .slice(0, 3);
+
+          if (quickFolders.length === 0) {
+            return of([]);
+          }
+
+          return forkJoin(
+            quickFolders.map((folder, index) => {
+              return this.fileService.list(folder.id).pipe(
+                map((files) => this.toDriveFolder(folder, files.length, index)),
+                catchError(() => of(this.toDriveFolder(folder, 0, index))),
+              );
+            }),
+          );
+        }),
+        finalize(() => this.loadingQuickFolders.set(false)),
+      )
+      .subscribe({
+        next: (folders) => this.quickFolders.set(folders),
+        error: () => {
+          this.quickFolders.set([]);
+          this.quickFoldersError.set('ไม่สามารถโหลดโฟลเดอร์ด่วนได้');
+        },
+      });
+  }
+
   ngOnDestroy(): void {
     this.revokeFilePreviews();
     this.removeMobileViewModeListener();
@@ -282,6 +333,10 @@ export class Dashboard implements OnDestroy {
     }
 
     return `${environment.apiUrl.replace('/api', '')}${picturePath}`;
+  }
+
+  openQuickFolder(folder: DriveFolder): void {
+    this.router.navigate(['/my-drive/folders', folder.id]);
   }
 
   downloadFile(file: DriveFile): void {
@@ -675,6 +730,19 @@ export class Dashboard implements OnDestroy {
       size: this.formatFileSize(file.sizeBytes),
       updatedAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
       updatedAt: this.formatUpdatedAt(file.updatedAt),
+    };
+  }
+
+  private toDriveFolder(folder: UserFolder, fileCount: number, colorIndex: number): DriveFolder {
+    const updatedAtTime = new Date(folder.updatedAt).getTime();
+
+    return {
+      id: folder.id,
+      name: folder.folderName,
+      files: fileCount,
+      updatedAtTime: Number.isNaN(updatedAtTime) ? 0 : updatedAtTime,
+      updatedAt: this.formatUpdatedAt(folder.updatedAt),
+      color: quickFolderColors[colorIndex % quickFolderColors.length],
     };
   }
 

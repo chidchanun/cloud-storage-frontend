@@ -219,6 +219,8 @@ export class MyDrive {
   readonly moveMessage = signal('');
   readonly starringFileId = signal<number | null>(null);
   readonly starredFileIds = signal<Set<number>>(new Set());
+  readonly starringFolderId = signal<number | null>(null);
+  readonly starredFolderIds = signal<Set<number>>(new Set());
   readonly sharingFileId = signal<number | null>(null);
   readonly shareTarget = signal<ShareTarget | null>(null);
   readonly shareMode = signal<ShareMode>('user');
@@ -316,15 +318,26 @@ export class MyDrive {
       files: this.fileService.list(this.currentFolderId()),
       folders: this.folderService.list(this.currentFolderId()),
       starredFiles: this.sharedDriveMode() ? of([]) : this.fileService.starredFiles(),
+      starredFolders: this.sharedDriveMode() ? of([]) : this.folderService.starredFolders(),
     })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ files, folders, starredFiles }) => {
+        next: ({ files, folders, starredFiles, starredFolders }) => {
           this.clearSvgPreviewUrls();
-          this.folders.set(folders.map((folder) => this.toMyDriveFolder(folder)));
-          this.starredFileIds.set(new Set(starredFiles.map((file) => file.id)));
+          const nextFolders = folders.map((folder) => this.toMyDriveFolder(folder));
           const nextFiles = files.map((file) => this.toMyDriveFile(file));
+          const visibleFolderIds = new Set(nextFolders.map((folder) => folder.id));
+          const visibleFileIds = new Set(nextFiles.map((file) => file.id));
+          const nextStarredFileIds = starredFiles
+            .map((file) => file.id)
+            .filter((fileId) => Number.isFinite(fileId) && visibleFileIds.has(fileId));
+          const nextStarredFolderIds = starredFolders
+            .map((folder) => folder.id)
+            .filter((folderId) => Number.isFinite(folderId) && visibleFolderIds.has(folderId));
 
+          this.folders.set(nextFolders);
+          this.starredFileIds.set(new Set(nextStarredFileIds));
+          this.starredFolderIds.set(new Set(nextStarredFolderIds));
           this.files.set(nextFiles);
           this.selectedFileIds.set(new Set());
           nextFiles
@@ -663,6 +676,49 @@ export class MyDrive {
     return this.starredFileIds().has(fileId);
   }
 
+  toggleFolderStar(folder: MyDriveFolder): void {
+    if (this.sharedDriveMode() || this.starringFolderId() !== null) {
+      return;
+    }
+
+    const nextStarred = !this.isFolderStarred(folder.id);
+
+    this.closeActionMenu();
+    this.starringFolderId.set(folder.id);
+    this.actionMessage.set('');
+    this.actionError.set('');
+
+    const request = nextStarred
+      ? this.folderService.star(folder.id)
+      : this.folderService.unstar(folder.id);
+
+    request
+      .pipe(finalize(() => this.starringFolderId.set(null)))
+      .subscribe({
+        next: () => {
+          this.starredFolderIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+
+            if (nextStarred) {
+              nextIds.add(folder.id);
+            } else {
+              nextIds.delete(folder.id);
+            }
+
+            return nextIds;
+          });
+          this.actionMessage.set(nextStarred ? 'เพิ่มโฟลเดอร์ในรายการโปรดแล้ว' : 'นำโฟลเดอร์ออกจากรายการโปรดแล้ว');
+        },
+        error: () => {
+          this.actionError.set('ไม่สามารถอัปเดตรายการโปรดของโฟลเดอร์ได้');
+        },
+      });
+  }
+
+  isFolderStarred(folderId: number): boolean {
+    return this.starredFolderIds().has(folderId);
+  }
+
   deleteFile(file: MyDriveFile): void {
     if (this.deletingFileId() !== null) {
       return;
@@ -891,6 +947,11 @@ export class MyDrive {
         next: () => {
           // Remove only the deleted folder from the current view to avoid a full page reload flash.
           this.folders.update((folders) => folders.filter((item) => item.id !== folder.id));
+          this.starredFolderIds.update((currentIds) => {
+            const nextIds = new Set(currentIds);
+            nextIds.delete(folder.id);
+            return nextIds;
+          });
           this.actionMessage.set('ลบโฟลเดอร์สำเร็จ');
           this.deleteFolderTarget.set(null);
         },

@@ -1,4 +1,4 @@
-import { afterNextRender, Component, computed, inject, signal } from '@angular/core';
+import { afterNextRender, Component, computed, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
@@ -40,6 +40,11 @@ interface SharedFolderItem {
   expiresAtTime: number | null;
 }
 
+interface ActionMenuPosition {
+  top: number;
+  left: number;
+}
+
 @Component({
   selector: 'app-shared-with-me',
   imports: [
@@ -79,6 +84,12 @@ export class SharedWithMe {
   readonly actionError = signal('');
   readonly renameError = signal('');
   readonly searchTerm = signal('');
+  readonly contextMenuFile = signal<SharedFileItem | null>(null);
+  readonly contextMenuFolder = signal<SharedFolderItem | null>(null);
+  readonly actionMenuPosition = signal<ActionMenuPosition>({
+    top: 0,
+    left: 0,
+  });
   readonly filteredFolders = computed(() => {
     const keyword = this.searchTerm().trim().toLowerCase();
 
@@ -114,6 +125,11 @@ export class SharedWithMe {
     });
   }
 
+  @HostListener('document:click')
+  closeContextMenuOnLeftClick(): void {
+    this.closeContextMenu();
+  }
+
   loadSharedFiles(): void {
     if (this.loading()) {
       return;
@@ -145,6 +161,7 @@ export class SharedWithMe {
   }
 
   openFolder(folder: SharedFolderItem): void {
+    this.closeContextMenu();
     void this.router.navigate(['/shared-with-me/folders', folder.folderId]);
   }
 
@@ -153,6 +170,7 @@ export class SharedWithMe {
       return;
     }
 
+    this.closeContextMenu();
     this.downloadingFileId.set(file.fileId);
     this.actionMessage.set('');
     this.actionError.set('');
@@ -181,11 +199,35 @@ export class SharedWithMe {
       return;
     }
 
+    this.closeContextMenu();
     this.renameTarget.set(file);
     this.renameName.set(file.name);
     this.renameError.set('');
     this.actionMessage.set('');
     this.actionError.set('');
+  }
+
+  openFolderContextMenu(folder: SharedFolderItem, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenuFile.set(null);
+    this.contextMenuFolder.set(folder);
+    this.actionMenuPosition.set(this.fitMenuPosition(event.clientX, event.clientY, 96));
+  }
+
+  openFileContextMenu(file: SharedFileItem, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenuFolder.set(null);
+    this.contextMenuFile.set(file);
+    this.actionMenuPosition.set(this.fitMenuPosition(event.clientX, event.clientY, 136));
+  }
+
+  closeContextMenu(): void {
+    this.contextMenuFile.set(null);
+    this.contextMenuFolder.set(null);
   }
 
   cancelRename(): void {
@@ -324,5 +366,15 @@ export class SharedWithMe {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  private fitMenuPosition(left: number, top: number, menuHeight: number): ActionMenuPosition {
+    const menuWidth = 200;
+    const padding = 12;
+
+    return {
+      left: Math.min(left, window.innerWidth - menuWidth - padding),
+      top: Math.min(top, window.innerHeight - menuHeight - padding),
+    };
   }
 }

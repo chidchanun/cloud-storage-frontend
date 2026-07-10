@@ -19,6 +19,28 @@ interface ApiListFoldersResponse {
   parent_id: number | null;
 }
 
+interface ApiStarredFolder {
+  star_id: number;
+  folder_id: number;
+  parent_id: number | null;
+  folder_name: string;
+  folder_created_at: string;
+  folder_updated_at: string;
+  starred_at: string;
+}
+
+interface ApiListStarredFoldersResponse {
+  message: string;
+  folders: ApiStarredFolder[];
+  total: number;
+}
+
+interface ApiFolderStarResponse {
+  message: string;
+  folder_id?: number;
+  is_starred: boolean;
+}
+
 interface ApiCreateFolderResponse {
   message: string;
   folder: ApiUserFolder;
@@ -117,6 +139,11 @@ export interface UserFolder {
   folderName: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StarredFolder extends UserFolder {
+  starId: number;
+  starredAt: string;
 }
 
 export interface CreateFolderResponse {
@@ -244,6 +271,34 @@ export class FolderService {
       .pipe(
         map((response) => response.folders.map((folder) => this.normalizeFolder(folder))),
       );
+  }
+
+  starredFolders(): Observable<StarredFolder[]> {
+    return this.http
+      .get<ApiListStarredFoldersResponse>(`${this.apiUrl}/starred`, { withCredentials: true })
+      .pipe(
+        map((response) => response.folders.map((folder) => this.normalizeStarredFolder(folder))),
+      );
+  }
+
+  star(folderId: number): Observable<ApiFolderStarResponse> {
+    return this.http.post<ApiFolderStarResponse>(
+      `${this.apiUrl}/${folderId}/star`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  unstar(folderId: number): Observable<ApiFolderStarResponse> {
+    return this.http.delete<ApiFolderStarResponse>(`${this.apiUrl}/${folderId}/star`, {
+      withCredentials: true,
+    });
+  }
+
+  checkStar(folderId: number): Observable<boolean> {
+    return this.http
+      .get<ApiFolderStarResponse>(`${this.apiUrl}/${folderId}/star`, { withCredentials: true })
+      .pipe(map((response) => response.is_starred));
   }
 
   create(folderName: string, parentId?: number | null): Observable<CreateFolderResponse> {
@@ -470,6 +525,18 @@ export class FolderService {
       folderName: folder.folder_name,
       createdAt: folder.created_at,
       updatedAt: folder.updated_at,
+    };
+  }
+
+  private normalizeStarredFolder(folder: ApiStarredFolder): StarredFolder {
+    return {
+      id: folder.folder_id,
+      starId: folder.star_id,
+      parentId: folder.parent_id,
+      folderName: folder.folder_name,
+      createdAt: folder.folder_created_at,
+      updatedAt: folder.folder_updated_at,
+      starredAt: folder.starred_at,
     };
   }
 }
