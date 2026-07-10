@@ -1,6 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import {
+  finalize,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  tap,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
@@ -106,6 +113,7 @@ export interface SelectPlanResponse {
 export class PlanService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
+  private currentPlanRequest: Observable<UserStoragePlan> | null = null;
   readonly currentStoragePlan = signal<UserStoragePlan | null>(null);
 
   listPlans(): Observable<Plan[]> {
@@ -114,13 +122,33 @@ export class PlanService {
       .pipe(map((response) => response.plans.map((plan) => this.normalizePlan(plan))));
   }
 
-  currentPlan(): Observable<UserStoragePlan> {
-    return this.http
+  currentPlan(forceRefresh = false): Observable<UserStoragePlan> {
+    const cachedPlan = this.currentStoragePlan();
+
+    if (!forceRefresh && cachedPlan) {
+      return of(cachedPlan);
+    }
+
+    if (!forceRefresh && this.currentPlanRequest) {
+      return this.currentPlanRequest;
+    }
+
+    const request = this.http
       .get<ApiCurrentPlanResponse>(`${this.apiUrl}/me/plan`, { withCredentials: true })
       .pipe(
         map((response) => this.normalizeStoragePlan(response.plan)),
         tap((plan) => this.currentStoragePlan.set(plan)),
+        finalize(() => {
+          this.currentPlanRequest = null;
+        }),
+        shareReplay(1),
       );
+
+    if (!forceRefresh) {
+      this.currentPlanRequest = request;
+    }
+
+    return request;
   }
 
   selectPlan(planCode: string, autoRenew: boolean): Observable<SelectPlanResponse> {

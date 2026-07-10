@@ -59,11 +59,13 @@ export class AppSidebar {
 
   constructor() {
     afterNextRender(() => {
-      if (!this.storagePlan()) {
-        this.planService.currentPlan().subscribe({
-          error: () => this.planService.currentStoragePlan.set(null),
-        });
-      }
+      window.setTimeout(() => {
+        if (!this.storagePlan()) {
+          this.planService.currentPlan().subscribe({
+            error: () => this.planService.currentStoragePlan.set(null),
+          });
+        }
+      }, 2500);
     });
   }
 

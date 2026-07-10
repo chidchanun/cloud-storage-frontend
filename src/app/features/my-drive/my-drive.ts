@@ -282,12 +282,14 @@ export class MyDrive {
     });
   });
 
+  
+
   constructor() {
     // Keep API fetching on the client so the server-rendered shell stays quick.
     afterNextRender(() => {
       this.syncMobileViewMode();
       this.restoreViewMode();
-      this.loadStoragePlan();
+      window.setTimeout(() => this.loadStoragePlan(), 2500);
       this.route.paramMap.subscribe((params) => {
         window.setTimeout(() => {
           void this.loadFromRoute(params.get('id'));
@@ -317,33 +319,25 @@ export class MyDrive {
     forkJoin({
       files: this.fileService.list(this.currentFolderId()),
       folders: this.folderService.list(this.currentFolderId()),
-      starredFiles: this.sharedDriveMode() ? of([]) : this.fileService.starredFiles(),
-      starredFolders: this.sharedDriveMode() ? of([]) : this.folderService.starredFolders(),
     })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ files, folders, starredFiles, starredFolders }) => {
+        next: ({ files, folders }) => {
           this.clearSvgPreviewUrls();
           const nextFolders = folders.map((folder) => this.toMyDriveFolder(folder));
           const nextFiles = files.map((file) => this.toMyDriveFile(file));
-          const visibleFolderIds = new Set(nextFolders.map((folder) => folder.id));
-          const visibleFileIds = new Set(nextFiles.map((file) => file.id));
-          const nextStarredFileIds = starredFiles
-            .map((file) => file.id)
-            .filter((fileId) => Number.isFinite(fileId) && visibleFileIds.has(fileId));
-          const nextStarredFolderIds = starredFolders
-            .map((folder) => folder.id)
-            .filter((folderId) => Number.isFinite(folderId) && visibleFolderIds.has(folderId));
 
           this.folders.set(nextFolders);
-          this.starredFileIds.set(new Set(nextStarredFileIds));
-          this.starredFolderIds.set(new Set(nextStarredFolderIds));
+          this.starredFileIds.set(new Set());
+          this.starredFolderIds.set(new Set());
           this.files.set(nextFiles);
           this.selectedFileIds.set(new Set());
           nextFiles
             .filter((file) => this.canPreviewSvg(file))
+            .slice(0, 6)
             .forEach((file) => this.loadSvgPreview(file));
           this.revealHighlightedFile();
+          this.loadStarredStatesAfterPaint(nextFiles, nextFolders);
         },
         error: () => {
           this.loadError.set('ไม่สามารถโหลดไฟล์ของคุณได้');
@@ -351,7 +345,7 @@ export class MyDrive {
       });
   }
 
-  loadStoragePlan(): void {
+  loadStoragePlan(forceRefresh = false): void {
     if (this.sharedDriveMode() || this.storagePlanLoading()) {
       return;
     }
@@ -359,12 +353,47 @@ export class MyDrive {
     this.storagePlanLoading.set(true);
 
     this.planService
-      .currentPlan()
+      .currentPlan(forceRefresh)
       .pipe(finalize(() => this.storagePlanLoading.set(false)))
       .subscribe({
         next: (plan) => this.storagePlan.set(plan),
         error: () => this.storagePlan.set(null),
       });
+  }
+
+  private loadStarredStatesAfterPaint(files: MyDriveFile[], folders: MyDriveFolder[]): void {
+    if (this.sharedDriveMode()) {
+      return;
+    }
+
+    const visibleFileIds = new Set(files.map((file) => file.id));
+    const visibleFolderIds = new Set(folders.map((folder) => folder.id));
+
+    window.setTimeout(() => {
+      forkJoin({
+        starredFiles: this.fileService.starredFiles(),
+        starredFolders: this.folderService.starredFolders(),
+      })
+        .pipe(
+          catchError(() =>
+            of({
+              starredFiles: [],
+              starredFolders: [],
+            }),
+          ),
+        )
+        .subscribe(({ starredFiles, starredFolders }) => {
+          const nextStarredFileIds = starredFiles
+            .map((file) => file.id)
+            .filter((fileId) => Number.isFinite(fileId) && visibleFileIds.has(fileId));
+          const nextStarredFolderIds = starredFolders
+            .map((folder) => folder.id)
+            .filter((folderId) => Number.isFinite(folderId) && visibleFolderIds.has(folderId));
+
+          this.starredFileIds.set(new Set(nextStarredFileIds));
+          this.starredFolderIds.set(new Set(nextStarredFolderIds));
+        });
+    }, 900);
   }
 
   openFolder(folder: MyDriveFolder): void {
@@ -526,7 +555,7 @@ export class MyDrive {
           }
           this.uploadProgress.set(100);
           this.uploadSpeedLabel.set('');
-          this.loadStoragePlan();
+          this.loadStoragePlan(true);
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
         error: (error) => {
@@ -1865,6 +1894,7 @@ export class MyDrive {
       this.files.update((currentFiles) => [...uploadedFiles, ...currentFiles]);
       uploadedFiles
         .filter((file) => this.canPreviewSvg(file))
+        .slice(0, 6)
         .forEach((file) => this.loadSvgPreview(file));
     }
 
@@ -1874,7 +1904,7 @@ export class MyDrive {
 
     if (uploadedFiles.length > 0) {
       this.uploadMessage.set(`อัปโหลด ${uploadedFiles.length} ไฟล์สำเร็จ`);
-      this.loadStoragePlan();
+      this.loadStoragePlan(true);
     }
   }
 

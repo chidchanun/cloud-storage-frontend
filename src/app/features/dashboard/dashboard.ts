@@ -36,12 +36,8 @@ import {
   LucideX,
 } from '@lucide/angular';
 import {
-  catchError,
   finalize,
   forkJoin,
-  map,
-  of,
-  switchMap,
 } from 'rxjs';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -250,7 +246,7 @@ export class Dashboard implements OnDestroy {
       });
   }
 
-  loadStoragePlan(): void {
+  loadStoragePlan(forceRefresh = false): void {
     if (this.storagePlanLoading()) {
       return;
     }
@@ -258,7 +254,7 @@ export class Dashboard implements OnDestroy {
     this.storagePlanLoading.set(true);
 
     this.planService
-      .currentPlan()
+      .currentPlan(forceRefresh)
       .pipe(finalize(() => this.storagePlanLoading.set(false)))
       .subscribe({
         next: (plan) => this.storagePlan.set(plan),
@@ -277,7 +273,10 @@ export class Dashboard implements OnDestroy {
     this.folderService
       .list()
       .pipe(
-        switchMap((folders) => {
+        finalize(() => this.loadingQuickFolders.set(false)),
+      )
+      .subscribe({
+        next: (folders) => {
           const quickFolders = [...folders]
             .sort((firstFolder, secondFolder) => {
               return (
@@ -285,25 +284,11 @@ export class Dashboard implements OnDestroy {
                 new Date(firstFolder.updatedAt).getTime()
               );
             })
-            .slice(0, 3);
+            .slice(0, 3)
+            .map((folder, index) => this.toDriveFolder(folder, 0, index));
 
-          if (quickFolders.length === 0) {
-            return of([]);
-          }
-
-          return forkJoin(
-            quickFolders.map((folder, index) => {
-              return this.fileService.list(folder.id).pipe(
-                map((files) => this.toDriveFolder(folder, files.length, index)),
-                catchError(() => of(this.toDriveFolder(folder, 0, index))),
-              );
-            }),
-          );
-        }),
-        finalize(() => this.loadingQuickFolders.set(false)),
-      )
-      .subscribe({
-        next: (folders) => this.quickFolders.set(folders),
+          this.quickFolders.set(quickFolders);
+        },
         error: () => {
           this.quickFolders.set([]);
           this.quickFoldersError.set('ไม่สามารถโหลดโฟลเดอร์ด่วนได้');
@@ -638,7 +623,7 @@ export class Dashboard implements OnDestroy {
           this.loadFilesError.set('');
           this.uploadProgress.set(100);
           this.uploadSpeedLabel.set('');
-          this.loadStoragePlan();
+          this.loadStoragePlan(true);
           this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
         },
         error: (error) => {
@@ -774,6 +759,7 @@ export class Dashboard implements OnDestroy {
   private loadImagePreviews(files: DriveFile[]): void {
     files
       .filter((file) => file.type === 'image')
+      .slice(0, 4)
       .forEach((file) => {
         this.fileService.download(file.id).subscribe({
           next: (blob) => {
