@@ -4,7 +4,9 @@ import { filter, map, Observable, Subscription } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-const parallelChunkUploads = 3;
+// Cloudflare Tunnel is more stable when large uploads use one in-flight chunk.
+// Parallel chunk requests can be canceled together by the tunnel on weaker links.
+const parallelChunkUploads = 1;
 
 interface ApiUserFile {
   id: number;
