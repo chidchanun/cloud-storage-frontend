@@ -108,6 +108,7 @@
                 type="file"
                 class="sr-only"
                 [disabled]="uploading()"
+                multiple
                 (change)="uploadFile($event)"
               />
               <input
@@ -1045,6 +1046,89 @@
     </section>
   </div>
 
+  @if (pendingFolderUpload(); as folderUpload) {
+    <div
+      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="my-drive-folder-upload-title"
+    >
+      <section
+        class="w-full max-w-lg rounded-xl border border-blue-100 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.24)] dark:border-cyan-300/20 dark:bg-slate-900"
+      >
+        <div class="mb-5 flex items-start gap-3">
+          <div
+            class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700 dark:bg-cyan-300/10 dark:text-cyan-300"
+          >
+            <svg lucideFolder aria-hidden="true" class="h-6 w-6"></svg>
+          </div>
+          <div class="min-w-0">
+            <h2
+              id="my-drive-folder-upload-title"
+              class="m-0 text-xl font-black tracking-normal"
+            >
+              อัปโหลดโฟลเดอร์นี้?
+            </h2>
+            <p class="m-0 mt-2 text-sm font-bold leading-6 text-slate-500 dark:text-slate-400">
+              ระบบจะสร้างโฟลเดอร์และโฟลเดอร์ย่อยตามตำแหน่งไฟล์ที่เลือก
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="mb-5 grid gap-3 rounded-xl border border-blue-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-bold text-slate-500 dark:text-slate-400">โฟลเดอร์</span>
+            <span
+              class="min-w-0 truncate text-right text-sm font-extrabold text-slate-900 dark:text-slate-100"
+              [title]="folderUpload.rootName"
+            >
+              {{ folderUpload.rootName }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-bold text-slate-500 dark:text-slate-400">จำนวนไฟล์</span>
+            <span class="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+              {{ folderUpload.files.length }} ไฟล์
+            </span>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-bold text-slate-500 dark:text-slate-400">ขนาดรวม</span>
+            <span class="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+              {{ folderUpload.totalSize }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelFolderUpload()"
+            [disabled]="uploading()"
+            class="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="confirmFolderUpload()"
+            [disabled]="uploading()"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-extrabold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-blue-300"
+          >
+            <svg
+              lucideUpload
+              aria-hidden="true"
+              class="h-4 w-4"
+              [class.animate-bounce]="uploading()"
+            ></svg>
+            {{ uploading() ? 'กำลังอัปโหลด...' : 'อัปโหลดโฟลเดอร์' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
   @if (deleteTarget()) {
     <div
       class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
@@ -1111,7 +1195,7 @@
 
   @if (bulkDeleteDialogOpen()) {
     <div
-      class="fixed inset-0 z-60rid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex min-h-dvh items-center justify-center overflow-y-auto bg-slate-950/40 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="my-drive-bulk-delete-title"
@@ -1173,7 +1257,7 @@
 
   @if (deleteFolderTarget()) {
     <div
-      class="fixed inset-0 z-60 grid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex min-h-dvh items-center justify-center overflow-y-auto bg-slate-950/40 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="my-drive-delete-folder-title"
@@ -1199,7 +1283,7 @@
               จะถูกย้ายไปถังขยะ
             </p>
             <p class="m-0 mt-1 text-xs font-bold leading-5 text-slate-400 dark:text-slate-500">
-              ตอนนี้ระบบลบได้เฉพาะโฟลเดอร์ที่ไม่มีไฟล์หรือโฟลเดอร์ย่อย
+              ไฟล์และโฟลเดอร์ย่อยทั้งหมดภายในโฟลเดอร์นี้จะถูกย้ายไปถังขยะด้วย
             </p>
           </div>
         </div>
@@ -1312,7 +1396,7 @@
 
   @if (moveFolderTarget()) {
     <div
-      class="fixed inset-0 z-60rid place-items-center bg-slate-950/40 px-4 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex min-h-dvh items-center justify-center overflow-y-auto bg-slate-950/40 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="my-drive-move-folder-title"

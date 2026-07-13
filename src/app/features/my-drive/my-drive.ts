@@ -84,6 +84,20 @@ interface FolderPathItem {
   name: string;
 }
 
+interface UploadQueueItem {
+  file: File;
+  folderId: number | null;
+  displayInCurrentFolder: boolean;
+  progressKey: string;
+}
+
+interface PendingFolderUpload {
+  input: HTMLInputElement;
+  files: File[];
+  rootName: string;
+  totalSize: string;
+}
+
 interface ActionMenuPosition {
   top: number;
   left: number;
@@ -166,6 +180,7 @@ export class MyDrive {
   readonly uploadSpeedLabel = signal('');
   readonly uploadMessage = signal('');
   readonly uploadError = signal('');
+  readonly pendingFolderUpload = signal<PendingFolderUpload | null>(null);
   readonly storagePlan = signal<UserStoragePlan | null>(null);
   readonly storagePlanLoading = signal(false);
   readonly storageUsagePercent = computed(() => {
@@ -508,60 +523,31 @@ export class MyDrive {
 
   uploadFile(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
+    const files = Array.from(input.files ?? []);
     this.closeNewMenu();
 
-    if (!file || this.uploading()) {
+    if (files.length === 0 || this.uploading()) {
       return;
     }
 
-    if (this.storagePlan() && file.size > this.storagePlan()!.remainingStorageBytes) {
+    const totalUploadSize = files.reduce((sum, file) => sum + file.size, 0);
+    if (this.storagePlan() && totalUploadSize > this.storagePlan()!.remainingStorageBytes) {
       this.uploadError.set('ไม่สามารถอัปโหลดได้ พื้นที่จัดเก็บคงเหลือไม่พอ');
       input.value = '';
       return;
     }
 
-    this.uploading.set(true);
-    this.uploadProgress.set(0);
-    this.uploadProgressLabel.set(file.name);
-    this.uploadSpeedLabel.set('');
-    this.uploadMessage.set('');
-    this.uploadError.set('');
+    const queueItems = files.map((file, index) => ({
+      file,
+      folderId: this.currentFolderId(),
+      displayInCurrentFolder: true,
+      progressKey: `${index}:${file.name}`,
+    }));
 
-    this.fileService
-      .uploadWithProgress(file, this.currentFolderId())
-      .pipe(
-        finalize(() => {
-          this.uploading.set(false);
-          this.uploadProgress.set(0);
-          this.uploadProgressLabel.set('');
-          this.uploadSpeedLabel.set('');
-          input.value = '';
-        }),
-      )
-      .subscribe({
-        next: (event) => {
-          if (event.type === 'progress') {
-            this.uploadProgress.set(event.progress);
-            this.uploadSpeedLabel.set(event.speedLabel);
-            return;
-          }
-
-          const uploadedFile = this.toMyDriveFile(event.response.file);
-
-          this.files.update((files) => [uploadedFile, ...files]);
-          if (this.canPreviewSvg(uploadedFile)) {
-            this.loadSvgPreview(uploadedFile);
-          }
-          this.uploadProgress.set(100);
-          this.uploadSpeedLabel.set('');
-          this.loadStoragePlan(true);
-          this.uploadMessage.set('อัปโหลดไฟล์สำเร็จ');
-        },
-        error: (error) => {
-          this.uploadError.set(error.error?.message || 'ไม่สามารถอัปโหลดไฟล์ได้');
-        },
-      });
+    this.uploadQueuedFiles(input, queueItems, {
+      refreshAfterDone: false,
+      successLabel: 'อัปโหลดไฟล์',
+    });
   }
 
   uploadFolder(event: Event): void {
@@ -580,59 +566,88 @@ export class MyDrive {
       return;
     }
 
+    const firstRelativePath = this.uploadRelativePath(files[0]);
+    const rootName = firstRelativePath.split('/').filter(Boolean)[0] || 'โฟลเดอร์ที่เลือก';
+
+    this.uploadMessage.set('');
+    this.uploadError.set('');
+    this.pendingFolderUpload.set({
+      input,
+      files,
+      rootName,
+      totalSize: this.formatFileSize(totalUploadSize),
+    });
+  }
+
+  cancelFolderUpload(): void {
+    const pendingUpload = this.pendingFolderUpload();
+
+    if (this.uploading()) {
+      return;
+    }
+
+    if (pendingUpload) {
+      pendingUpload.input.value = '';
+    }
+
+    this.pendingFolderUpload.set(null);
+  }
+
+  async confirmFolderUpload(): Promise<void> {
+    const pendingUpload = this.pendingFolderUpload();
+
+    if (!pendingUpload || this.uploading()) {
+      return;
+    }
+
+    const { input, files } = pendingUpload;
+    this.pendingFolderUpload.set(null);
     this.uploading.set(true);
     this.uploadProgress.set(0);
-    this.uploadProgressLabel.set(`0/${files.length} ไฟล์`);
+    this.uploadProgressLabel.set('กำลังสร้างโฟลเดอร์...');
+    this.uploadSpeedLabel.set('');
     this.uploadMessage.set('');
     this.uploadError.set('');
 
-    this.uploadSpeedLabel.set('');
+    try {
+      const folderCache = new Map<string, number>();
+      const createdTopFolders: MyDriveFolder[] = [];
+      const queueItems: UploadQueueItem[] = [];
 
-    const fileProgress = new Map<string, number>();
-    const uploadedFiles: MyDriveFile[] = [];
-    let finishedCount = 0;
-    let failedCount = 0;
+      for (const [index, file] of files.entries()) {
+        const relativePath = this.uploadRelativePath(file);
+        const pathParts = relativePath.split('/').filter(Boolean);
+        const folderNames = pathParts.slice(0, -1);
+        const folderId = await this.ensureUploadFolderPath(
+          folderNames,
+          folderCache,
+          createdTopFolders,
+        );
 
-    files.forEach((file, index) => {
-      const progressKey = `${index}:${file.name}`;
-      fileProgress.set(progressKey, 0);
+        queueItems.push({
+          file,
+          folderId,
+          displayInCurrentFolder: folderId === this.currentFolderId(),
+          progressKey: `${index}:${relativePath}`,
+        });
+      }
 
-      this.fileService.uploadWithProgress(file, this.currentFolderId()).subscribe({
-        next: (event) => {
-          if (event.type === 'progress') {
-            fileProgress.set(progressKey, event.progress);
-            this.uploadSpeedLabel.set(event.speedLabel);
-            this.updateFolderUploadProgress(fileProgress, files.length, finishedCount);
-            return;
-          }
+      if (createdTopFolders.length > 0) {
+        this.folders.update((currentFolders) => [...createdTopFolders, ...currentFolders]);
+      }
 
-          fileProgress.set(progressKey, 100);
-          uploadedFiles.push(this.toMyDriveFile(event.response.file));
-        },
-        error: () => {
-          failedCount += 1;
-          finishedCount += 1;
-          fileProgress.set(progressKey, 100);
-          this.finishFolderUploadIfDone(
-            input,
-            files.length,
-            finishedCount,
-            failedCount,
-            uploadedFiles,
-          );
-        },
-        complete: () => {
-          finishedCount += 1;
-          this.finishFolderUploadIfDone(
-            input,
-            files.length,
-            finishedCount,
-            failedCount,
-            uploadedFiles,
-          );
-        },
+      this.uploadQueuedFiles(input, queueItems, {
+        refreshAfterDone: true,
+        successLabel: 'อัปโหลดโฟลเดอร์',
       });
-    });
+    } catch {
+      this.uploading.set(false);
+      this.uploadProgress.set(0);
+      this.uploadProgressLabel.set('');
+      this.uploadSpeedLabel.set('');
+      this.uploadError.set('ไม่สามารถสร้างโฟลเดอร์สำหรับอัปโหลดได้');
+      input.value = '';
+    }
   }
 
   downloadFile(file: MyDriveFile): void {
@@ -1871,41 +1886,159 @@ export class MyDrive {
     this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์`);
   }
 
-  private finishFolderUploadIfDone(
+  private uploadQueuedFiles(
     input: HTMLInputElement,
-    totalFiles: number,
-    finishedCount: number,
-    failedCount: number,
-    uploadedFiles: MyDriveFile[],
+    queueItems: UploadQueueItem[],
+    options: {
+      refreshAfterDone: boolean;
+      successLabel: string;
+    },
   ): void {
-    this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์`);
+    const fileProgress = new Map<string, number>();
+    const uploadedFiles: MyDriveFile[] = [];
+    const totalFiles = queueItems.length;
+    let finishedCount = 0;
+    let failedCount = 0;
+    let nextIndex = 0;
 
-    if (finishedCount < totalFiles) {
-      return;
-    }
-
-    this.uploading.set(false);
+    queueItems.forEach((item) => fileProgress.set(item.progressKey, 0));
+    this.uploading.set(true);
     this.uploadProgress.set(0);
-    this.uploadProgressLabel.set('');
+    this.uploadProgressLabel.set(`0/${totalFiles} ไฟล์`);
     this.uploadSpeedLabel.set('');
-    input.value = '';
+    this.uploadMessage.set('');
+    this.uploadError.set('');
 
-    if (uploadedFiles.length > 0) {
-      this.files.update((currentFiles) => [...uploadedFiles, ...currentFiles]);
-      uploadedFiles
-        .filter((file) => this.canPreviewSvg(file))
-        .slice(0, 6)
-        .forEach((file) => this.loadSvgPreview(file));
+    const finishIfDone = (): void => {
+      this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์`);
+
+      if (finishedCount < totalFiles) {
+        return;
+      }
+
+      this.uploading.set(false);
+      this.uploadProgress.set(0);
+      this.uploadProgressLabel.set('');
+      this.uploadSpeedLabel.set('');
+      input.value = '';
+
+      if (uploadedFiles.length > 0) {
+        this.files.update((currentFiles) => [...uploadedFiles, ...currentFiles]);
+        uploadedFiles
+          .filter((file) => this.canPreviewSvg(file))
+          .slice(0, 6)
+          .forEach((file) => this.loadSvgPreview(file));
+      }
+
+      if (failedCount > 0) {
+        this.uploadError.set(`อัปโหลดไม่สำเร็จ ${failedCount} ไฟล์`);
+      }
+
+      if (finishedCount > 0) {
+        this.uploadMessage.set(`${options.successLabel}สำเร็จ ${totalFiles - failedCount} ไฟล์`);
+        this.loadStoragePlan(true);
+      }
+
+      if (options.refreshAfterDone) {
+        this.loadFiles();
+      }
+    };
+
+    const uploadNext = (): void => {
+      if (nextIndex >= totalFiles) {
+        finishIfDone();
+        return;
+      }
+
+      const item = queueItems[nextIndex];
+      nextIndex += 1;
+      this.uploadProgressLabel.set(`${finishedCount}/${totalFiles} ไฟล์ · ${item.file.name}`);
+
+      this.fileService.uploadWithProgress(item.file, item.folderId).subscribe({
+        next: (event) => {
+          if (event.type === 'progress') {
+            fileProgress.set(item.progressKey, event.progress);
+            this.uploadSpeedLabel.set(event.speedLabel);
+            this.updateFolderUploadProgress(fileProgress, totalFiles, finishedCount);
+            return;
+          }
+
+          fileProgress.set(item.progressKey, 100);
+          if (item.displayInCurrentFolder) {
+            uploadedFiles.push(this.toMyDriveFile(event.response.file));
+          }
+        },
+        error: () => {
+          failedCount += 1;
+          finishedCount += 1;
+          fileProgress.set(item.progressKey, 100);
+          this.updateFolderUploadProgress(fileProgress, totalFiles, finishedCount);
+          uploadNext();
+        },
+        complete: () => {
+          finishedCount += 1;
+          this.updateFolderUploadProgress(fileProgress, totalFiles, finishedCount);
+          uploadNext();
+        },
+      });
+    };
+
+    uploadNext();
+  }
+
+  private uploadRelativePath(file: File): string {
+    const fileWithFolderPath = file as File & {
+      webkitRelativePath?: string;
+    };
+
+    return fileWithFolderPath.webkitRelativePath?.trim() || file.name;
+  }
+
+  private async ensureUploadFolderPath(
+    folderNames: string[],
+    folderCache: Map<string, number>,
+    createdTopFolders: MyDriveFolder[],
+  ): Promise<number | null> {
+    let parentId = this.currentFolderId();
+
+    for (const [index, rawFolderName] of folderNames.entries()) {
+      const folderName = rawFolderName.trim();
+
+      if (!folderName) {
+        continue;
+      }
+
+      const cacheKey = `${parentId ?? 'root'}:${folderName.toLocaleLowerCase()}`;
+      const cachedFolderId = folderCache.get(cacheKey);
+
+      if (cachedFolderId) {
+        parentId = cachedFolderId;
+        continue;
+      }
+
+      const existingFolder = (await firstValueFrom(this.folderService.list(parentId))).find(
+        (folder) => folder.folderName.toLocaleLowerCase() === folderName.toLocaleLowerCase(),
+      );
+
+      if (existingFolder) {
+        folderCache.set(cacheKey, existingFolder.id);
+        parentId = existingFolder.id;
+        continue;
+      }
+
+      const parentBeforeCreate = parentId;
+      const response = await firstValueFrom(this.folderService.create(folderName, parentId));
+      const createdFolder = this.toMyDriveFolder(response.folder);
+
+      folderCache.set(cacheKey, createdFolder.id);
+      parentId = createdFolder.id;
+
+      if (index === 0 && parentBeforeCreate === this.currentFolderId()) {
+        createdTopFolders.push(createdFolder);
+      }
     }
 
-    if (failedCount > 0) {
-      this.uploadError.set(`อัปโหลดไม่สำเร็จ ${failedCount} ไฟล์`);
-    }
-
-    if (uploadedFiles.length > 0) {
-      this.uploadMessage.set(`อัปโหลด ${uploadedFiles.length} ไฟล์สำเร็จ`);
-      this.loadStoragePlan(true);
-    }
+    return parentId;
   }
 
   private async loadFromRoute(folderIdParam: string | null): Promise<void> {
